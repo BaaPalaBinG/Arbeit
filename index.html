@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Uren • KM • Factuur</title>
   <style>
     :root{
@@ -232,6 +232,30 @@
     @media print{
       .book-grid{display:block}
       .tablewrap{border:0}
+    }
+
+
+    /* ===============================
+       iPhone / iOS: voorkom automatische zoom op input focus
+       - iOS zoomt vaak in als font-size < 16px
+       - We zetten inputs/selects/textarea op 16px op small screens
+       - Desktop krijgt weer 14px via media query
+    =============================== */
+    input, select, textarea{
+      font-size:16px;
+    }
+    @media (min-width: 900px){
+      input, select, textarea{
+        font-size:14px;
+      }
+    }
+
+    /* Probeer dubbele-tap zoom te beperken (werkt afhankelijk van iOS versie) */
+    html, body{
+      touch-action: pan-x pan-y;
+    }
+    .tabbtn, button{
+      touch-action: manipulation;
     }
 
 </style>
