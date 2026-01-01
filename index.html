@@ -1,913 +1,2323 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Uren & Kilometers Registratie</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Uren • KM • Factuur</title>
   <style>
-    :root {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --bg: #f2f2f2;
-      --card-bg: #ffffff;
-      --text: #222222;
-      --muted: #555555;
-      --border: #d0d0d0;
-      --chip-bg: #e0e0e0;
-      --entry-bg: #fafafa;
-      --pill-bg: #e8f0ff;
-      --pill-text: #1a3e90;
-      --lock-pill-bg: #ffe5b5;
-      --lock-pill-text: #7a4a00;
-      --toast-bg: #222222;
+    :root{
+      --bg:#0b0f14;
+      --txt:#e8eefc;
+      --muted:#9ab0d0;
+      --line:#20314a;
+      --acc:#5ad1ff;
+      --good:#33d17a;
+      --bad:#ff5c7a;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --r:14px;
+      --pad:14px;
+      --fs:14px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: radial-gradient(1200px 800px at 20% 0%, rgba(90,209,255,.15), transparent 60%),
+                  radial-gradient(900px 600px at 80% 20%, rgba(51,209,122,.10), transparent 55%),
+                  var(--bg);
+      color:var(--txt);
+      font-size:var(--fs);
+    }
+    header{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter: blur(10px);
+      background: rgba(11,15,20,.7);
+      border-bottom:1px solid rgba(32,49,74,.7);
+    }
+    .wrap{max-width:1050px;margin:0 auto;padding:12px 12px 90px}
+    .topbar{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0;}
+    .brand{display:flex;flex-direction:column;line-height:1.1}
+    .brand b{font-size:15px}
+    .brand span{color:var(--muted);font-size:12px}
+    nav{display:flex; gap:8px; flex-wrap:wrap;}
+    .tabbtn{
+      border:1px solid rgba(32,49,74,.85);
+      background: rgba(17,24,38,.55);
+      color:var(--txt);
+      padding:8px 10px;
+      border-radius:999px;
+      cursor:pointer;
+      display:flex; align-items:center; gap:8px;
+      transition:.15s;
+      user-select:none;
+    }
+    .tabbtn:hover{transform:translateY(-1px);border-color:rgba(90,209,255,.5)}
+    .tabbtn.active{
+      background: rgba(90,209,255,.12);
+      border-color: rgba(90,209,255,.55);
+      box-shadow: 0 0 0 4px rgba(90,209,255,.08);
     }
 
-    body.dark {
-      --bg: #050509;
-      --card-bg: #111119;
-      --text: #f5f5f7;
-      --muted: #a0a0b5;
-      --border: #303040;
-      --chip-bg: #202230;
-      --entry-bg: #15151f;
-      --pill-bg: #1f2845;
-      --pill-text: #d0ddff;
-      --lock-pill-bg: #4a3518;
-      --lock-pill-text: #ffd8a0;
-      --toast-bg: #000000;
+    .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:12px; margin-top:14px;}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
+
+    .card{
+      background: linear-gradient(180deg, rgba(17,24,38,.92), rgba(15,22,35,.92));
+      border:1px solid rgba(32,49,74,.85);
+      border-radius:var(--r);
+      box-shadow: var(--shadow);
+      padding:var(--pad);
+    }
+    .card h2{margin:0 0 10px; font-size:14px; letter-spacing:.2px; display:flex;align-items:center;justify-content:space-between;}
+    .muted{color:var(--muted)}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row > *{flex:1}
+    .field{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+    label{color:var(--muted);font-size:12px}
+    input, select, textarea{
+      width:100%;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid rgba(32,49,74,.9);
+      background: rgba(11,15,20,.45);
+      color:var(--txt);
+      outline:none;
+    }
+    textarea{min-height:70px;resize:vertical}
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(90,209,255,.6);
+      box-shadow: 0 0 0 4px rgba(90,209,255,.08);
+    }
+    .btnbar{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    button{
+      border:1px solid rgba(32,49,74,.9);
+      background: rgba(17,24,38,.75);
+      color:var(--txt);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      transition:.15s;
+    }
+    button:hover{transform:translateY(-1px);border-color:rgba(90,209,255,.45)}
+    button:disabled{opacity:.45; cursor:not-allowed; transform:none}
+    .primary{background: rgba(90,209,255,.14); border-color: rgba(90,209,255,.55);}
+    .danger{background: rgba(255,92,122,.12); border-color: rgba(255,92,122,.45);}
+    .good{background: rgba(51,209,122,.12); border-color: rgba(51,209,122,.45);}
+
+    table{width:100%; border-collapse:collapse; margin-top:8px; border-radius:12px; overflow:hidden; border:1px solid rgba(32,49,74,.85);}
+    th, td{ text-align:left; padding:10px; border-bottom:1px solid rgba(32,49,74,.6); vertical-align:top; font-size:13px;}
+    th{color:var(--muted);font-weight:600;background:rgba(11,15,20,.25)}
+    tr:last-child td{border-bottom:none}
+    .pill{display:inline-block; padding:3px 8px; border-radius:999px; border:1px solid rgba(32,49,74,.85); color:var(--muted); font-size:12px;}
+    .right{text-align:right}
+    .mono{font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1;}
+    .small{font-size:12px}
+    .split{display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;}
+    .split > div{flex:1; min-width:260px}
+    .screen{display:none}
+    .screen.active{display:block}
+
+    /* locked rows */
+    .locked-row{opacity:.75}
+    .locktag{display:inline-block; margin-left:6px; padding:2px 8px; border-radius:999px; font-size:11px;
+      border:1px solid rgba(32,49,74,.85); color:var(--muted);
+      background: rgba(11,15,20,.25);
     }
 
-    body {
-      margin: 0;
-      padding: 0;
-      background: var(--bg);
-      color: var(--text);
+    /* PRINT */
+    @page { margin: 10mm; }
+
+    .print-only{display:none}
+    @media print{
+      header, .no-print{display:none!important}
+      body{background:#fff;color:#000}
+      .wrap{max-width:none;padding:0}
+      .card{box-shadow:none;border:0;background:#fff;padding:0}
+      table{border:1px solid #ddd;border-radius:0}
+      th{background:#f3f3f3;color:#333}
+      td, th{border-bottom:1px solid #eee}
+      .pill{border:1px solid #ddd;color:#555}
+      .print-only{display:block}
+
+      /* One-page fit */
+      body{font-size:11px}
+      th, td{padding:6px;font-size:11px}
+      .print-title{font-size:18px;margin:0 0 3mm 0}
+      .print-header{margin-bottom:5mm;padding-bottom:4mm}
+      .print-footer{margin-top:auto;padding-top:4mm}
+      .print-sheet{
+        min-height: 273mm; /* A4 height minus margins (approx) */
+        display:flex;
+        flex-direction:column;
+        justify-content:flex-start;
+      }
+      .print-sheet .print-footer{margin-top:auto}
+      a[href]:after{content:""} /* geen extra link-tekst */
+      .print-footer{
+        margin-top:0;
+        font-size:10px;
+        color:#666;
+        display:flex;
+        justify-content:space-between;
+        border-top:1px solid #eee;
+        padding-top:6mm;
+      }
+      .print-header{
+        display:flex;
+        justify-content:space-between;
+        gap:12mm;
+        align-items:flex-start;
+        margin-bottom:8mm;
+        padding-bottom:6mm;
+        border-bottom:1px solid #eee;
+      }
+      .print-title{
+        font-size:22px;
+        font-weight:800;
+        letter-spacing:.3px;
+        margin:0 0 3mm 0;
+      }
+      .print-meta{
+        font-size:12px;
+        color:#111;
+        line-height:1.45;
+      }
+      .print-box-title{
+        font-size:11px;
+        color:#666;
+        margin-bottom:2mm;
+        text-transform:uppercase;
+        letter-spacing:.6px;
+      }
+      .print-block{
+        font-size:12px;
+        line-height:1.45;
+      }
+    }
+  
+    /* Boekhouding */
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+    @media (max-width: 900px){ .kpi-grid{grid-template-columns:repeat(2,1fr);} }
+    .kpi{border:1px solid rgba(32,49,74,.85); border-radius:14px; padding:12px; background:rgba(11,15,20,.25)}
+    .kpi .t{color:var(--muted); font-size:12px; margin-bottom:6px}
+    .kpi .v{font-size:18px; font-weight:800}
+    .tag{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid rgba(32,49,74,.85);font-size:11px;color:var(--muted)}
+    .table-mini td,.table-mini th{font-size:12px;padding:8px}
+
+
+    /* ===============================
+       BOEKHOUDING LAYOUT V15
+    =============================== */
+    .book-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:12px;margin-top:14px}
+    @media (max-width: 1000px){ .book-grid{grid-template-columns:1fr} }
+    .book-main{min-width:0}
+    .book-side{min-width:0}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+    @media (max-width: 900px){
+      .grid-4{grid-template-columns:1fr 1fr}
+      .grid-3{grid-template-columns:1fr}
+      .grid-2{grid-template-columns:1fr}
+    }
+    .kpi-big{font-size:22px;font-weight:800;margin-top:2px}
+    .kpi-sub{margin-top:6px}
+    .mini{padding:10px;border:1px solid rgba(32,49,74,.6);border-radius:12px;background:rgba(11,15,20,.25)}
+    .small{font-size:12px}
+    .tablewrap{overflow:auto;border-radius:12px;border:1px solid rgba(32,49,74,.55)}
+    .tablewrap table{margin-top:0;border:0}
+    .tablewrap th{background:rgba(11,15,20,.25)}
+    .tablewrap td,.tablewrap th{border-bottom:1px solid rgba(32,49,74,.45)}
+    .tablewrap tr:last-child td{border-bottom:none}
+    @media print{
+      .book-grid{display:block}
+      .tablewrap{border:0}
     }
 
-    .app {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-
-    h1 {
-      font-size: 1.2rem;
-      margin: 0;
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .nav-tabs {
-      display: inline-flex;
-      border-radius: 999px;
-      background: var(--chip-bg);
-      padding: 3px;
-    }
-
-    .nav-tabs button {
-      border: none;
-      background: transparent;
-      padding: 6px 14px;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      color: var(--text);
-    }
-
-    .nav-tabs button.active {
-      background: var(--card-bg);
-      box-shadow: 0 0 0 1px var(--border);
-    }
-
-    .card {
-      background: var(--card-bg);
-      border-radius: 10px;
-      padding: 14px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      margin-bottom: 14px;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 10px 12px;
-    }
-
-    label {
-      display: block;
-      font-size: 0.75rem;
-      color: var(--muted);
-      margin-bottom: 3px;
-    }
-
-    input, select {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 6px 8px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      font-size: 0.85rem;
-      background: var(--card-bg);
-      color: var(--text);
-    }
-
-    input:focus {
-      outline: none;
-      border-color: #007aff;
-      box-shadow: 0 0 0 1px rgba(0,122,255,0.2);
-    }
-
-    .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    button.primary {
-      border: none;
-      border-radius: 999px;
-      padding: 8px 16px;
-      font-size: 0.85rem;
-      background: #007aff;
-      color: #fff;
-      cursor: pointer;
-    }
-
-    button.secondary {
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 8px 14px;
-      font-size: 0.85rem;
-      background: transparent;
-      color: var(--text);
-      cursor: pointer;
-    }
-
-    button.secondary.small {
-      padding: 6px 10px;
-      font-size: 0.75rem;
-    }
-
-    button:active {
-      transform: scale(0.98);
-    }
-
-    .small-hint {
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-
-    .entry-actions {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin: 8px 0;
-      font-size: 0.8rem;
-    }
-
-    .entry-actions select {
-      max-width: 260px;
-    }
-
-    .entry-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      max-height: 260px;
-      overflow-y: auto;
-      margin-top: 4px;
-    }
-
-    /* compacte grid layout */
-    .entry-item {
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: var(--entry-bg);
-      font-size: 0.8rem;
-
-      display: grid;
-      grid-template-columns: auto 70px 120px 1fr auto;
-      align-items: center;
-      gap: 10px;
-      min-height: 30px;
-    }
-
-    .entry-item.locked {
-      border-style: dashed;
-      opacity: 0.95;
-    }
-
-    .entry-item input[type="checkbox"] {
-      transform: scale(1.05);
-      margin: 0;
-    }
-
-    .entry-date {
-      white-space: nowrap;
-      opacity: 0.85;
-    }
-
-    .entry-time {
-      white-space: nowrap;
-    }
-
-    .entry-clientjob {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      opacity: 0.9;
-    }
-
-    .entry-right {
-      white-space: nowrap;
-      text-align: right;
-      font-weight: 500;
-      opacity: 0.85;
-    }
-
-    .pill {
-      display: inline-block;
-      font-size: 0.7rem;
-      padding: 1px 5px;
-      border-radius: 999px;
-      background: var(--pill-bg);
-      color: var(--pill-text);
-    }
-
-    .lock-pill {
-      display: inline-block;
-      font-size: 0.65rem;
-      padding: 1px 5px;
-      border-radius: 999px;
-      background: var(--lock-pill-bg);
-      color: var(--lock-pill-text);
-      margin-left: 6px;
-    }
-
-    .screen {
-      display: none;
-    }
-
-    .screen.active {
-      display: block;
-    }
-
-    .totals {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 8px;
-    }
-
-    .total-box {
-      flex: 1;
-      min-width: 120px;
-      background: var(--entry-bg);
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      padding: 10px;
-      font-size: 0.8rem;
-    }
-
-    .total-label {
-      color: var(--muted);
-      font-size: 0.75rem;
-    }
-
-    .total-value {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-top: 4px;
-    }
-
-    .overview-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.75rem;
-      margin-top: 8px;
-    }
-
-    .overview-table th,
-    .overview-table td {
-      border-bottom: 1px solid #333;
-      padding: 4px 3px;
-      text-align: left;
-      white-space: nowrap;
-    }
-
-    .overview-table th {
-      font-weight: 600;
-      font-size: 0.7rem;
-      color: var(--muted);
-      position: sticky;
-      top: 0;
-      background: var(--card-bg);
-      z-index: 1;
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--toast-bg);
-      color: #fff;
-      padding: 8px 14px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-      z-index: 9999;
-    }
-
-    .toast.show {
-      opacity: 0.9;
-    }
-
-    .section-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-top: 4px;
-    }
-
-    .theme-toggle {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      padding: 0;
-      font-size: 1rem;
-    }
-  </style>
+</style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <h1>Uren & Kilometer Registratie</h1>
-    <div class="header-right">
-      <div class="nav-tabs">
-        <button id="tabInput" class="active" type="button">Invoer</button>
-        <button id="tabOverview" type="button">Overzicht</button>
+
+<header class="no-print">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <b>Uren • KM • Factuur</b>
+        <span class="muted">EUR</span>
       </div>
-      <button id="themeToggle" class="secondary small theme-toggle" type="button" title="Wissel thema">🌙</button>
+      <nav>
+        <div class="tabbtn active" data-tab="screen-hours">🕒 Uren & KM</div>
+        <div class="tabbtn" data-tab="screen-rates">💶 Tarieven</div>
+        <div class="tabbtn" data-tab="screen-invoice">🧾 Factuur</div>
+        <div class="tabbtn" data-tab="screen-books">📚 Boekhouding</div>
+        <div class="tabbtn" data-tab="screen-settings">⚙️ Instellingen</div>
+      </nav>
     </div>
-  </header>
+  </div>
+</header>
 
-  <!-- SCHERM 1: INVOER -->
-  <section id="screenInput" class="screen active">
-    <div class="card">
-      <div class="form-grid">
-        <div>
-          <label for="date">Datum</label>
-          <input id="date" type="date" />
+<div class="wrap">
+  <!-- HOURS -->
+  <section id="screen-hours" class="screen active">
+    <div class="grid">
+      <div class="card">
+        <h2><span>Nieuwe regel</span><span class="pill mono" id="todayPill"></span></h2>
+
+        <div class="row">
+          <div class="field">
+            <label>Datum</label>
+            <input id="hDate" type="date">
+          </div>
+          <div class="field">
+            <label>Klant</label>
+            <select id="hClient"></select>
+          </div>
         </div>
-        <div>
-          <label for="timeFrom">Tijd van</label>
-          <input id="timeFrom" type="time" />
+
+        <div class="row">
+          <div class="field">
+            <label>Van</label>
+            <input id="hFrom" type="time">
+          </div>
+          <div class="field">
+            <label>Tot</label>
+            <input id="hTo" type="time">
+          </div>
+          <div class="field">
+            <label>Pauze</label>
+            <input id="hBreak" type="number" inputmode="numeric" min="0" step="5" value="0">
+          </div>
         </div>
-        <div>
-          <label for="timeTo">Tijd tot</label>
-          <input id="timeTo" type="time" />
+
+        <div class="row">
+          <div class="field">
+            <label>KM</label>
+            <input id="hKm" type="number" inputmode="decimal" min="0" step="1" value="0">
+          </div>
+          <div class="field">
+            <label>Uren</label>
+            <input id="hHours" type="text" class="mono" readonly>
+          </div>
         </div>
-        <div>
-          <label for="hours">Uren (h)</label>
-          <input id="hours" type="number" step="0.25" placeholder="Bijv. 8" />
+
+        <div class="field">
+          <label>Omschrijving</label>
+          <textarea id="hDesc" placeholder="Bijv: survey / travel / sampling"></textarea>
         </div>
-        <div>
-          <label for="km">Kilometers (km)</label>
-          <input id="km" type="number" step="1" placeholder="Bijv. 245" />
+
+        <div class="btnbar">
+          <button type="button" class="primary" id="btnAddRow">➕ Toevoegen</button>
+          <button type="button" id="btnClearForm">🧼 Leeg</button>
+          <button type="button" class="danger" id="btnClearAll">🗑️ Alles wissen</button>
         </div>
-        <div>
-          <label for="client">Opdrachtgever</label>
-          <input id="client" type="text" list="clientList" placeholder="Bijv. Saybolt" />
-          <datalist id="clientList"></datalist>
-        </div>
-        <div>
-          <label for="job">Job / Locatie</label>
-          <input id="job" type="text" placeholder="Bijv. GISELA ESSBERGER" />
+
+        <div class="btnbar" style="margin-top:10px">
+          <button type="button" class="good" id="btnExportDayWhatsApp">📲 WhatsApp export</button>
+          <button type="button" id="btnLockDay">🔒 Lock</button>
+          <button type="button" id="btnUnlockDay">🔓 Unlock</button>
         </div>
       </div>
 
-      <div class="btn-row">
-        <button id="saveEntry" type="button" class="primary">Opslaan</button>
-        <button id="copyLast" type="button" class="secondary">
-          Kopieer laatste naar WhatsApp
-        </button>
+      <div class="card">
+        <h2><span>Overzicht</span><span class="pill mono" id="rowsCountPill">0</span></h2>
+
+        <div class="row">
+          <div class="field">
+            <label>Vanaf</label>
+            <input id="fFrom" type="date">
+          </div>
+          <div class="field">
+            <label>Tot</label>
+            <input id="fTo" type="date">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Klant</label>
+            <select id="fClient"></select>
+          </div>
+          <div class="field">
+            <label>Filter</label>
+            <select id="fQuick">
+              <option value="all">Alles</option>
+              <option value="thisMonth">Deze maand</option>
+              <option value="lastMonth">Vorige maand</option>
+              <option value="thisWeek">Deze week</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="btnbar">
+          <button type="button" id="btnApplyFilter" class="primary">🔎 Toon</button>
+          <button type="button" id="btnResetFilter">↩️ Reset</button>
+        </div>
+
+        <div class="card" style="margin-top:12px;background:rgba(11,15,20,.25)">
+          <div class="split">
+            <div>
+              <div class="muted small">Uren</div>
+              <div class="mono" style="font-size:20px" id="sumHours">0.00</div>
+            </div>
+            <div>
+              <div class="muted small">KM</div>
+              <div class="mono" style="font-size:20px" id="sumKm">0</div>
+            </div>
+            <div>
+              <div class="muted small">Regels</div>
+              <div class="mono" style="font-size:20px" id="sumRows">0</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="card">
-      <strong class="section-title">Laatste registraties</strong>
-
-      <div class="entry-actions">
-        <select id="entryAction">
-          <option value="">Kies actie…</option>
-          <option value="delete">Verwijder geselecteerden</option>
-          <option value="lock">Lock geselecteerden (niet meer aanpasbaar)</option>
-          <option value="unlock">Unlock geselecteerden</option>
-        </select>
-        <button id="applyEntryAction" type="button" class="secondary small">Uitvoeren</button>
-      </div>
-
-      <div id="entryList" class="entry-list"></div>
-    </div>
-  </section>
-
-  <!-- SCHERM 2: OVERZICHT -->
-  <section id="screenOverview" class="screen">
-    <div class="card">
-      <div class="totals">
-        <div class="total-box">
-          <div class="total-label">Totaal uren</div>
-          <div id="totalHours" class="total-value">0 h</div>
-        </div>
-        <div class="total-box">
-          <div class="total-label">Totaal kilometers</div>
-          <div id="totalKm" class="total-value">0 km</div>
-        </div>
-      </div>
-
-      <div style="max-height:260px; overflow:auto;">
-        <div class="section-title">Alle registraties</div>
-        <table class="overview-table">
+    <div class="card" style="margin-top:12px">
+      <h2><span>Regels</span><span class="muted small">Locked regels kunnen niet weg</span></h2>
+      <div style="overflow:auto">
+        <table>
           <thead>
-          <tr>
-            <th>Datum</th>
-            <th>Opdrachtgever</th>
-            <th>Job</th>
-            <th>Tijd</th>
-            <th>Uren</th>
-            <th>Km</th>
-          </tr>
+            <tr>
+              <th>Datum</th>
+              <th>Klant</th>
+              <th>Tijd</th>
+              <th class="right">Uren</th>
+              <th class="right">KM</th>
+              <th>Omschrijving</th>
+              <th class="right">Actie</th>
+            </tr>
           </thead>
-          <tbody id="overviewBody"></tbody>
+          <tbody id="rowsTbody"></tbody>
         </table>
       </div>
     </div>
+  </section>
 
-    <div class="card">
-      <div class="section-title">Per maand per opdrachtgever</div>
-      <div style="max-height:260px; overflow:auto;">
-        <table class="overview-table">
-          <thead>
-          <tr>
-            <th>Maand</th>
-            <th>Opdrachtgever</th>
-            <th>Uren</th>
-            <th>Kilometers</th>
-          </tr>
-          </thead>
-          <tbody id="monthlyBody"></tbody>
-        </table>
+  <!-- RATES -->
+  <section id="screen-rates" class="screen">
+    <div class="grid">
+      <div class="card">
+        <h2><span>Klant toevoegen</span><span class="pill">EUR</span></h2>
+
+        <div class="field">
+          <label>Klantnaam</label>
+          <input id="cName" type="text" placeholder="Bijv: JEPO Marine">
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Uurtarief</label>
+            <input id="cRateHour" type="number" inputmode="decimal" min="0" step="0.5" value="0">
+          </div>
+          <div class="field">
+            <label>KM-tarief</label>
+            <input id="cRateKm" type="number" inputmode="decimal" min="0" step="0.01" value="0">
+          </div>
+        </div>
+
+        <div class="btnbar">
+          <button type="button" class="primary" id="btnAddClient">➕ Opslaan</button>
+          <button type="button" id="btnSetDefaults">✨ Voorbeeld</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span>Klanten</span><span class="pill mono" id="clientsCountPill">0</span></h2>
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Klant</th>
+                <th class="right">Uur</th>
+                <th class="right">KM</th>
+                <th class="right">Actie</th>
+              </tr>
+            </thead>
+            <tbody id="clientsTbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </section>
+
+  <!-- INVOICE -->
+  <section id="screen-invoice" class="screen">
+    <div class="grid no-print">
+      <div class="card">
+        <h2><span>Factuur instellingen</span><span class="pill">EUR</span></h2>
+
+        <div class="row">
+          <div class="field">
+            <label>Factuurdatum</label>
+            <input id="invDate" type="date">
+          </div>
+          <div class="field">
+            <label>Vervaldagen</label>
+            <input id="invDueDays" type="number" min="0" step="1" value="30">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>BTW</label>
+            <input id="invVatPct" type="number" min="0" step="0.1" value="21">
+          </div>
+          <div class="field">
+            <label>Valuta</label>
+            <input type="text" value="EUR (€)" readonly>
+          </div>
+        </div>
+
+        <div class="btnbar">
+          <button type="button" class="primary" id="btnBuildInvoice">🧮 Opbouwen</button>
+          <button type="button" class="good" id="btnPrint">🖨️ Print</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span>Factuurnummer</span><span class="pill">Maand</span></h2>
+        <div class="row">
+          <div class="field">
+            <label>Volgende</label>
+            <input id="invNumber" type="text" class="mono" readonly>
+          </div>
+        </div>
+
+        <div class="btnbar">
+          <button type="button" id="btnAdvanceNumber">✅ Vastleggen</button>
+          <button type="button" class="danger" id="btnResetNumber">↺ Reset</button>
+        </div>
+
+        <div class="small muted" style="margin-top:10px">
+          Start <span class="mono">20260001</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h2 class="no-print"><span>Factuur</span><span class="muted small">Filter komt uit Overzicht</span></h2>
+      <div id="invoicePreview"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="screen-settings" class="screen">
+    <div class="grid">
+      <div class="card">
+        <h2><span>Afzender</span><span class="pill">Hensen Liquid Inspections</span></h2>
+
+        <div class="field"><label>Bedrijfsnaam</label><input id="sSenderName" type="text"></div>
+        <div class="field"><label>Adres</label><input id="sSenderAddr" type="text"></div>
+
+        <div class="row">
+          <div class="field"><label>KvK</label><input id="sSenderKvk" type="text"></div>
+          <div class="field"><label>BTW</label><input id="sSenderVat" type="text"></div>
+        </div>
+
+        <div class="row">
+          <div class="field"><label>IBAN</label><input id="sSenderIban" type="text"></div>
+          <div class="field"><label>E-mail</label><input id="sSenderEmail" type="email"></div>
+        </div>
+
+        <div class="btnbar">
+          <button type="button" class="primary" id="btnSaveSettings">💾 Opslaan</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span>Ontvanger</span><span class="pill">Vast</span></h2>
+
+        <div class="field"><label>Naam</label><input id="sRecName" type="text"></div>
+        <div class="field"><label>Adres</label><input id="sRecAddr" type="text"></div>
+        <div class="field"><label>Tekst onderaan</label><textarea id="sFooterNote"></textarea></div>
+
+        <div class="btnbar">
+          <button type="button" class="primary" id="btnSaveRecipient">💾 Opslaan</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card no-print" style="margin-top:12px">
+      <h2><span>Data</span><span class="muted small">Backup</span></h2>
+      <div class="btnbar">
+        <button type="button" id="btnExport">⬇️ Export</button>
+        <button type="button" id="btnImport">⬆️ Import</button>
+      </div>
+      <input id="importFile" type="file" accept="application/json" style="display:none">
+    </div>
+  </section>
+
+
+  <!-- BOOKKEEPING -->
+  <section id="screen-books" class="screen">
+  <div class="book-grid">
+    <!-- LEFT / MAIN -->
+    <div class="book-main">
+      <!-- TOP: KPI -->
+      <div class="grid-3">
+        <div class="card kpi">
+          <h2><span>Winst</span><span class="pill">Filter periode</span></h2>
+          <div class="kpi-big mono" id="bkKpiProfit">€0.00</div>
+          <div class="kpi-sub muted">Omzet <span class="mono" id="bkKpiRev">€0.00</span> • Kosten <span class="mono" id="bkKpiCost">€0.00</span></div>
+        </div>
+
+        <div class="card kpi">
+          <h2><span>BTW</span><span class="pill">Kwartaal</span></h2>
+          <div class="kpi-big mono" id="bkKpiVatPay">€0.00</div>
+          <div class="kpi-sub muted">Output <span class="mono" id="bkKpiVatOut">€0.00</span> • Input <span class="mono" id="bkKpiVatIn">€0.00</span></div>
+        </div>
+
+        <div class="card kpi">
+          <h2><span>Rendement</span><span class="pill">Indicatie</span></h2>
+          <div class="kpi-big mono" id="bkKpiMargin">0.0%</div>
+          <div class="kpi-sub muted">Winst / Omzet</div>
+        </div>
+      </div>
+
+      <!-- BANK SALDOS -->
+      <div class="card" style="margin-top:12px">
+        <h2><span>Bank saldos</span><span class="pill mono" id="bkBanksCount">0</span></h2>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Bank</th>
+                <th class="right">Start</th>
+                <th class="right">Mutaties</th>
+                <th class="right">Saldo</th>
+              </tr>
+            </thead>
+            <tbody id="bkBanksSummaryBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BTW + JAAROPGAVE -->
+      <div class="grid" style="margin-top:12px">
+        <div class="card">
+          <h2><span>BTW-aangifte</span><span class="pill">21%</span></h2>
+
+          <div class="row">
+            <div class="field">
+              <label>Jaar</label>
+              <select id="bkVatYear"></select>
+            </div>
+            <div class="field">
+              <label>Kwartaal</label>
+              <select id="bkVatQuarter">
+                <option value="1">Q1</option>
+                <option value="2">Q2</option>
+                <option value="3">Q3</option>
+                <option value="4">Q4</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="mini">
+              <div class="muted small">Omzet excl.</div>
+              <div class="mono" id="bkVatRevNet">€0.00</div>
+            </div>
+            <div class="mini">
+              <div class="muted small">Omzet incl.</div>
+              <div class="mono" id="bkVatRevGross">€0.00</div>
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-top:10px">
+            <div class="mini">
+              <div class="muted small">Output BTW</div>
+              <div class="mono" id="bkVatOut">€0.00</div>
+            </div>
+            <div class="mini">
+              <div class="muted small">Input BTW</div>
+              <div class="mono" id="bkVatIn">€0.00</div>
+            </div>
+            <div class="mini">
+              <div class="muted small">Te betalen</div>
+              <div class="mono" id="bkVatPay">€0.00</div>
+            </div>
+          </div>
+
+          <div class="btnbar" style="margin-top:10px">
+            <button type="button" id="bkCopyVat">📋 Kopieer BTW</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><span>Jaaropgave</span><span class="pill">Indicatie</span></h2>
+
+          <div class="row">
+            <div class="field">
+              <label>Jaar</label>
+              <select id="bkYear"></select>
+            </div>
+            <div class="field">
+              <label>Belasting reservering %</label>
+              <input id="bkTaxPct" type="number" min="0" step="1" value="30">
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="mini">
+              <div class="muted small">Omzet</div>
+              <div class="mono" id="bkYearRev">€0.00</div>
+            </div>
+            <div class="mini">
+              <div class="muted small">Kosten</div>
+              <div class="mono" id="bkYearCost">€0.00</div>
+            </div>
+            <div class="mini">
+              <div class="muted small">Winst</div>
+              <div class="mono" id="bkYearProfit">€0.00</div>
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-top:10px">
+            <div class="mini">
+              <div class="muted small">BTW saldo</div>
+              <div class="mono" id="bkYearVat">€0.00</div>
+            </div>
+            <div class="mini">
+              <div class="muted small">Reservering</div>
+              <div class="mono" id="bkYearTax">€0.00</div>
+            </div>
+            <div class="mini">
+              <div class="muted small">Na reservering</div>
+              <div class="mono" id="bkYearAfter">€0.00</div>
+            </div>
+          </div>
+
+          <div class="btnbar" style="margin-top:10px">
+            <button type="button" id="bkCopyYear">📋 Kopieer jaar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIST + FILTERS -->
+      <div class="card" style="margin-top:12px">
+        <h2><span>Boekstukken & bankmutaties</span><span class="pill">Filter</span></h2>
+
+        <div class="grid-4">
+          <div class="field">
+            <label>Periode van</label>
+            <input id="bkFrom" type="date">
+          </div>
+          <div class="field">
+            <label>Tot</label>
+            <input id="bkTo" type="date">
+          </div>
+          <div class="field">
+            <label>Bank</label>
+            <select id="bkListBank"></select>
+          </div>
+          <div class="field">
+            <label>Type</label>
+            <select id="bkListType">
+              <option value="all">Alles</option>
+              <option value="income">In (omzet)</option>
+              <option value="expense">Uit (kosten)</option>
+              <option value="docs">Boekstukken</option>
+              <option value="tx">Bankmutaties</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-top:8px">
+          <div class="field">
+            <label>Relatie / categorie</label>
+            <input id="bkListParty" type="text" placeholder="Bijv: JEPO / brandstof">
+          </div>
+          <div class="field">
+            <label>Omschrijving</label>
+            <input id="bkListQuery" type="text" placeholder="Zoek in omschrijving">
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button type="button" class="primary" id="bkApply">🔎 Toepassen</button>
+          </div>
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Bank</th>
+                <th>Type</th>
+                <th>Relatie/cat</th>
+                <th>Omschrijving</th>
+                <th class="right">Bedrag</th>
+                <th class="right">BTW</th>
+                <th class="right">Actie</th>
+              </tr>
+            </thead>
+            <tbody id="bkUnifiedBody"></tbody>
+          </table>
+        </div>
+
+        <div class="muted small" style="margin-top:8px">
+          Tip: zet bankmutaties als “in/uit”. Boekstukken zijn facturen/bonnen (met BTW).
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT / SIDEBAR -->
+    <div class="book-side">
+      <div class="card">
+        <h2><span>Facturen / bonnen</span><span class="pill">Boekstuk</span></h2>
+
+        <div class="row">
+          <div class="field">
+            <label>Type</label>
+            <select id="bkDocType">
+              <option value="sales_invoice">Verkoopfactuur</option>
+              <option value="purchase_invoice">Inkoopfactuur</option>
+              <option value="receipt">Bon</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Datum</label>
+            <input id="bkDocDate" type="date">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Relatie</label>
+          <input id="bkDocParty" type="text" placeholder="Bijv: leverancier / klant">
+        </div>
+
+        <div class="field">
+          <label>Omschrijving</label>
+          <input id="bkDocDesc" type="text" placeholder="Bijv: brandstof / materiaal">
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Bedrag incl. BTW</label>
+            <input id="bkDocGross" type="number" step="0.01" value="0">
+          </div>
+          <div class="field">
+            <label>BTW %</label>
+            <input id="bkDocVatPct" type="number" step="0.1" value="21">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Bank (optioneel)</label>
+            <select id="bkDocBank"></select>
+          </div>
+          <div class="field">
+            <label>Bestand (optioneel)</label>
+            <input id="bkDocFile" type="file" accept="image/*,application/pdf">
+          </div>
+        </div>
+
+        <div class="btnbar">
+          <button type="button" class="primary" id="bkAddDoc">➕ Boekstuk</button>
+          <button type="button" id="bkClearDoc">Leeg</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h2><span>Banken</span><span class="pill">Beheer</span></h2>
+
+        <div class="field">
+          <label>Banknaam</label>
+          <input id="bkBankName" type="text" placeholder="Bijv: ING Zakelijk">
+        </div>
+
+        <div class="field">
+          <label>Startsaldo</label>
+          <input id="bkBankStart" type="number" step="0.01" value="0">
+        </div>
+
+        <div class="btnbar">
+          <button type="button" class="primary" id="bkAddBank">➕ Bank</button>
+        </div>
+
+        <hr style="border:0;border-top:1px solid rgba(32,49,74,.6);margin:12px 0">
+
+        <h2 style="margin-top:0"><span>Bankmutatie</span><span class="pill">In/Uit</span></h2>
+
+        <div class="field">
+          <label>Datum</label>
+          <input id="bkTxDate" type="date">
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Bank</label>
+            <select id="bkTxBank"></select>
+          </div>
+          <div class="field">
+            <label>Type</label>
+            <select id="bkTxType">
+              <option value="in">In</option>
+              <option value="out">Uit</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Omschrijving</label>
+          <input id="bkTxDesc" type="text" placeholder="Bijv: betaling / pin">
+        </div>
+
+        <div class="field">
+          <label>Relatie / categorie</label>
+          <input id="bkTxCat" type="text" placeholder="Bijv: JEPO / brandstof / kosten">
+        </div>
+
+        <div class="field">
+          <label>Bedrag</label>
+          <input id="bkTxAmount" type="number" step="0.01" value="0">
+        </div>
+
+        <div class="btnbar">
+          <button type="button" class="primary" id="bkAddTx">➕ Mutatie</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 </div>
 
-<div id="toast" class="toast">Gekopieerd 👍</div>
-
 <script>
-  const STORAGE_KEY = "urenKmEntries_v2";
-  const CLIENTS_KEY = "urenKmClients_v1";
-  const THEME_KEY = "urenKmTheme_v1";
+document.addEventListener("DOMContentLoaded", () => {
+  const el = (id) => document.getElementById(id);
+  const pad2 = (n)=> String(n).padStart(2,"0");
+  const fmtNum = (n, d=2)=> (Number(n)||0).toFixed(d);
+  const clamp = (n,min,max)=>Math.max(min,Math.min(max,n));
+  const uid = ()=> "id_" + Date.now() + "_" + Math.random().toString(16).slice(2);
 
-  const tabInput = document.getElementById("tabInput");
-  const tabOverview = document.getElementById("tabOverview");
-  const screenInput = document.getElementById("screenInput");
-  const screenOverview = document.getElementById("screenOverview");
+  const K = {
+    rows: "hli_rows_clean_v2",
+    clients: "hli_clients_clean_v2",
+    settings: "hli_settings_clean_v2",
+    recipient: "hli_recipient_clean_v2",
+    invoiceLog: "hli_invoice_log_clean_v2",
+    filters: "hli_filters_clean_v2",
+    bkBanks: "hli_bk_banks_v1",
+    bkDocs: "hli_bk_docs_v1",
+    bkTx: "hli_bk_tx_v1",
+    bkPeriod: "hli_bk_period_v1",
+    bkActiveFilters: "hli_bk_active_filters_v1",
+    bkPrefs: "hli_bk_prefs_v1"
+  };
 
-  const dateInput = document.getElementById("date");
-  const timeFromInput = document.getElementById("timeFrom");
-  const timeToInput = document.getElementById("timeTo");
-  const hoursInput = document.getElementById("hours");
-  const kmInput = document.getElementById("km");
-  const clientInput = document.getElementById("client");
-  const clientListEl = document.getElementById("clientList");
-  const jobInput = document.getElementById("job");
+  const load = (key, fallback) => {
+    try{
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    }catch(e){ return fallback; }
+  };
+  const save = (key, obj) => localStorage.setItem(key, JSON.stringify(obj));
 
-  const saveEntryBtn = document.getElementById("saveEntry");
-  const copyLastBtn = document.getElementById("copyLast");
-  const entryListEl = document.getElementById("entryList");
+  const todayISO = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  };
+  const toDate = (s) => {
+    const [y,m,d]=s.split("-").map(Number);
+    return new Date(y,m-1,d);
+  };
+  const sameMonthKey = (d)=> `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
 
-  const entryActionSelect = document.getElementById("entryAction");
-  const applyEntryActionBtn = document.getElementById("applyEntryAction");
-
-  const totalHoursEl = document.getElementById("totalHours");
-  const totalKmEl = document.getElementById("totalKm");
-  const overviewBodyEl = document.getElementById("overviewBody");
-  const monthlyBodyEl = document.getElementById("monthlyBody");
-
-  const toastEl = document.getElementById("toast");
-  const themeToggle = document.getElementById("themeToggle");
-
-  let entries = [];
-  let clients = [];
-  let manualOverride = false;
-
-  function applyTheme(theme) {
-    if (theme === "dark") {
-      document.body.classList.add("dark");
-      themeToggle.textContent = "☀️";
-    } else {
-      document.body.classList.remove("dark");
-      themeToggle.textContent = "🌙";
+  function ensureDefaults(){
+    if(!load(K.clients, null)){
+      save(K.clients, [{ id: uid(), name:"JEPO Marine", rateHour: 0, rateKm: 0 }]);
     }
+    if(!load(K.settings, null)){
+      save(K.settings, {
+        senderName: "Hensen Liquid Inspections",
+        senderAddr: "",
+        senderKvk: "",
+        senderVat: "",
+        senderIban: "",
+        senderEmail: ""
+      });
+    }
+    if(!load(K.recipient, null)){
+      save(K.recipient, { recName:"JEPO Marine", recAddr:"Hellevoetsluis", footerNote:"Graag o.v.v. factuurnummer." });
+    }
+    if(!load(K.invoiceLog, null)){
+      save(K.invoiceLog, { base:20260001, lastIssuedMonth:null, lastNumber:20260000 });
+    }
+    if(!load(K.filters, null)){
+      save(K.filters, { from:"", to:"", clientId:"all", quick:"thisMonth" });
+    }
+    if(!load(K.rows, null)){
+      save(K.rows, []);
+    }
+
+    if(!load(K.bkBanks, null)){
+      save(K.bkBanks, [{ id: uid(), name: "Bank", start: 0 }]);
+    }
+    if(!load(K.bkDocs, null)){
+      save(K.bkDocs, []);
+    }
+    if(!load(K.bkTx, null)){
+      save(K.bkTx, []);
+    }
+    if(!load(K.bkPeriod, null)){
+      save(K.bkPeriod, { mode:"month", month:"", quarter:1, year:new Date().getFullYear(), from:"", to:"" });
+    }
+
+    if(!load(K.bkPrefs, null)){
+      const now = new Date();
+      const q = Math.floor(now.getMonth()/3)+1;
+      save(K.bkPrefs, { vatYear: now.getFullYear(), vatQuarter: q, taxYear: now.getFullYear(), taxPct: 30 });
+    }
+
   }
 
-  const savedTheme = localStorage.getItem(THEME_KEY) || "light";
-  applyTheme(savedTheme);
+  // Tabs
+  document.querySelectorAll(".tabbtn").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll(".tabbtn").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      const tab = b.dataset.tab;
+      document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+      document.getElementById(tab).classList.add("active");
 
-  themeToggle.addEventListener("click", () => {
-    const newTheme = document.body.classList.contains("dark") ? "light" : "dark";
-    applyTheme(newTheme);
-    localStorage.setItem(THEME_KEY, newTheme);
+      if(tab==="screen-hours") renderRows();
+      if(tab==="screen-rates") renderClients();
+      if(tab==="screen-invoice"){ refreshInvoiceNumber(); buildInvoicePreview(); }
+      if(tab==="screen-books") renderBookkeeping();
+      if(tab==="screen-settings") renderSettings();
+    });
   });
 
-  function loadEntries() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      entries = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(entries)) entries = [];
-    } catch {
-      entries = [];
+  // Hours calc
+  function calcHours(dateISO, fromHHMM, toHHMM, breakMin){
+    if(!dateISO || !fromHHMM || !toHHMM) return 0;
+    const base = toDate(dateISO);
+    const [fh,fm]=fromHHMM.split(":").map(Number);
+    const [th,tm]=toHHMM.split(":").map(Number);
+    const start = new Date(base); start.setHours(fh,fm,0,0);
+    const end = new Date(base); end.setHours(th,tm,0,0);
+    if(end < start) end.setDate(end.getDate()+1);
+    const mins = (end - start)/60000 - (Number(breakMin)||0);
+    return Math.max(0, mins/60);
+  }
+  function updateAutoHours(){
+    const h = calcHours(el("hDate").value, el("hFrom").value, el("hTo").value, el("hBreak").value);
+    el("hHours").value = fmtNum(h,2);
+  }
+  ["hDate","hFrom","hTo","hBreak"].forEach(id=>{
+    el(id).addEventListener("input", updateAutoHours);
+  });
+
+  // Filters
+  const currentFilters = ()=> load(K.filters, { from:"", to:"", clientId:"all", quick:"all" });
+  function applyQuickFilter(quick){
+    const d = new Date();
+    let from="", to="";
+    if(quick==="thisMonth"){
+      from = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-01`;
+      to = todayISO();
+    } else if(quick==="lastMonth"){
+      const lm = new Date(d.getFullYear(), d.getMonth()-1, 1);
+      const end = new Date(d.getFullYear(), d.getMonth(), 0);
+      from = `${lm.getFullYear()}-${pad2(lm.getMonth()+1)}-01`;
+      to = `${end.getFullYear()}-${pad2(end.getMonth()+1)}-${pad2(end.getDate())}`;
+    } else if(quick==="thisWeek"){
+      const day = (d.getDay()+6)%7;
+      const mon = new Date(d); mon.setDate(d.getDate()-day);
+      from = `${mon.getFullYear()}-${pad2(mon.getMonth()+1)}-${pad2(mon.getDate())}`;
+      to = todayISO();
     }
+    return { from, to };
   }
 
-  function loadClients() {
-    try {
-      const raw = localStorage.getItem(CLIENTS_KEY);
-      clients = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(clients)) clients = [];
-    } catch {
-      clients = [];
+  function filteredRows(){
+    const rows = load(K.rows, []);
+    const f = currentFilters();
+    let from = f.from, to = f.to;
+    if(f.quick && f.quick!=="all"){
+      const q = applyQuickFilter(f.quick);
+      if(!from) from = q.from;
+      if(!to) to = q.to;
     }
+    const fromD = from ? toDate(from) : null;
+    const toD = to ? toDate(to) : null;
+
+    return rows.filter(r=>{
+      const rd = toDate(r.date);
+      if(fromD && rd < fromD) return false;
+      if(toD && rd > toD) return false;
+      if(f.clientId && f.clientId!=="all" && r.clientId!==f.clientId) return false;
+      return true;
+    }).sort((a,b)=> (a.date>b.date? -1:1));
   }
 
-  function saveEntries() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  }
-
-  function saveClients() {
-    localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
-  }
-
-  function formatDateShort(dateStr) {
-    if (!dateStr) return "";
-    const [y,m,d] = dateStr.split("-");
-    if (!y || !m || !d) return dateStr;
-    return parseInt(d,10) + "-" + parseInt(m,10);
-  }
-
-  function showToast(msg) {
-    toastEl.textContent = msg;
-    toastEl.classList.add("show");
-    setTimeout(() => toastEl.classList.remove("show"), 1800);
-  }
-
-  function renderClientList() {
-    clientListEl.innerHTML = "";
-    clients.forEach(c => {
-      if (!c) return;
-      const opt = document.createElement("option");
-      opt.value = c;
-      clientListEl.appendChild(opt);
+  function renderRows(){
+    const clients = load(K.clients, []);
+    const hClient = el("hClient");
+    const fClient = el("fClient");
+    hClient.innerHTML = "";
+    fClient.innerHTML = `<option value="all">Alle klanten</option>`;
+    clients.forEach(c=>{
+      const o1=document.createElement("option"); o1.value=c.id; o1.textContent=c.name; hClient.appendChild(o1);
+      const o2=document.createElement("option"); o2.value=c.id; o2.textContent=c.name; fClient.appendChild(o2);
     });
-  }
 
-  function addClientName(name) {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const exists = clients.some(c => c.toLowerCase() === trimmed.toLowerCase());
-    if (!exists) {
-      clients.push(trimmed);
-      saveClients();
-      renderClientList();
-    }
-  }
+    const f = currentFilters();
+    el("fFrom").value = f.from || "";
+    el("fTo").value = f.to || "";
+    el("fClient").value = f.clientId || "all";
+    el("fQuick").value = f.quick || "all";
 
-  function computeHoursFromTimes() {
-    const from = timeFromInput.value;
-    const to = timeToInput.value;
-    if (!from || !to) return;
+    const tbody = el("rowsTbody");
+    const rows = filteredRows();
+    tbody.innerHTML = "";
 
-    const [fh, fm] = from.split(":").map(Number);
-    const [th, tm] = to.split(":").map(Number);
-    if (isNaN(fh) || isNaN(fm) || isNaN(th) || isNaN(tm)) return;
+    let sumH=0, sumKm=0;
+    rows.forEach(r=>{
+      sumH += Number(r.hours)||0;
+      sumKm += Number(r.km)||0;
 
-    let startMin = fh * 60 + fm;
-    let endMin = th * 60 + tm;
-    if (endMin <= startMin) endMin += 24 * 60;
+      const cName = (clients.find(c=>c.id===r.clientId)||{}).name || "Onbekend";
+      const locked = !!r.locked;
 
-    const diffMin = endMin - startMin;
-    const hours = diffMin / 60;
-    const rounded = Math.round(hours * 100) / 100;
-    hoursInput.value = rounded.toString().replace(".", ",").replace(/,00$/, "");
-  }
+      const tr=document.createElement("tr");
+      if(locked) tr.classList.add("locked-row");
 
-  function ensureDate() {
-    if (!dateInput.value) {
-      dateInput.value = new Date().toISOString().split("T")[0];
-    }
-  }
-
-  function renderEntryList() {
-    entryListEl.innerHTML = "";
-    if (!entries.length) {
-      entryListEl.innerHTML = '<div style="font-size:0.8rem;color:var(--muted);">Nog geen registraties.</div>';
-      return;
-    }
-
-    const sorted = [...entries].sort((a,b) => b.createdAt - a.createdAt);
-
-    for (const e of sorted.slice(0, 40)) {
-      const div = document.createElement("div");
-      div.className = "entry-item" + (e.locked ? " locked" : "");
-      const lockLabel = e.locked ? '<span class="lock-pill">LOCKED</span>' : "";
-
-      div.innerHTML = `
-        <input type="checkbox" class="entry-check" data-id="${e.id}">
-        <span class="entry-date">${formatDateShort(e.date)}</span>
-        <span class="entry-time">${e.timeFrom || "?"} - ${e.timeTo || "?"}</span>
-        <span class="entry-clientjob">${e.client || "-"} • ${e.job || "-"} ${lockLabel}</span>
-        <span class="entry-right">${e.hours || 0}h&nbsp;&nbsp;${e.km || 0}km</span>
-      `;
-      entryListEl.appendChild(div);
-    }
-  }
-
-  function renderOverview() {
-    let totalHours = 0;
-    let totalKm = 0;
-    overviewBodyEl.innerHTML = "";
-
-    const sorted = [...entries].sort((a,b)=>a.createdAt-b.createdAt);
-
-    for (const e of sorted) {
-      let h = parseFloat((e.hours || "0").toString().replace(",", "."));
-      const k = parseFloat(e.km || 0);
-      if (!isNaN(h)) totalHours += h;
-      if (!isNaN(k)) totalKm += k;
-
-      const tr = document.createElement("tr");
+      const safeDesc = (r.desc||"").replaceAll("<","&lt;");
       tr.innerHTML = `
-        <td>${formatDateShort(e.date)}</td>
-        <td>${e.client || ""}</td>
-        <td>${e.job || ""}</td>
-        <td>${(e.timeFrom || "?") + " - " + (e.timeTo || "?")}</td>
-        <td>${e.hours || ""}</td>
-        <td>${e.km || ""}</td>
+        <td class="mono">${r.date}${locked ? `<span class="locktag">🔒</span>` : ""}</td>
+        <td>${cName}</td>
+        <td class="mono">${r.from}–${r.to}</td>
+        <td class="right mono">${fmtNum(r.hours,2)}</td>
+        <td class="right mono">${fmtNum(r.km,0)}</td>
+        <td>${safeDesc}</td>
+        <td class="right">
+          <button type="button" class="danger" data-del="${r.id}" ${locked ? "disabled" : ""}>
+            ${locked ? "Locked" : "Verwijder"}
+          </button>
+        </td>
       `;
-      overviewBodyEl.appendChild(tr);
-    }
+      tbody.appendChild(tr);
+    });
 
-    totalHoursEl.textContent = totalHours.toFixed(2).replace(/\.00$/,"") + " h";
-    totalKmEl.textContent = totalKm.toFixed(0) + " km";
+    tbody.querySelectorAll("button[data-del]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.dataset.del;
+        const all = load(K.rows, []);
+        const row = all.find(x=>x.id===id);
+        if(row && row.locked){ alert("Locked."); return; }
+        save(K.rows, all.filter(x=>x.id!==id));
+        renderRows();
+        buildInvoicePreview();
+      });
+    });
 
-    renderMonthlySummary();
+    el("sumHours").textContent = fmtNum(sumH,2);
+    el("sumKm").textContent = fmtNum(sumKm,0);
+    el("sumRows").textContent = rows.length;
+    el("rowsCountPill").textContent = String(rows.length);
   }
 
-  function renderMonthlySummary() {
-    monthlyBodyEl.innerHTML = "";
-    if (!entries.length) return;
+  // Clients
+  function renderClients(){
+    const clients = load(K.clients, []);
+    el("clientsCountPill").textContent = String(clients.length);
+    const tbody = el("clientsTbody");
+    tbody.innerHTML = "";
 
-    const map = new Map();
+    clients.forEach(c=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML = `
+        <td><input data-edit-name="${c.id}" value="${(c.name||"").replaceAll('"','&quot;')}" /></td>
+        <td class="right"><input class="right mono" data-edit-hour="${c.id}" type="number" step="0.5" min="0" value="${Number(c.rateHour||0)}" /></td>
+        <td class="right"><input class="right mono" data-edit-km="${c.id}" type="number" step="0.01" min="0" value="${Number(c.rateKm||0)}" /></td>
+        <td class="right"><button type="button" class="danger" data-del-client="${c.id}">Verwijder</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
 
-    for (const e of entries) {
-      if (!e.date || !e.client) continue;
-      const [y,m] = e.date.split("-");
-      if (!y || !m) continue;
-      const monthKey = y + "-" + m.padStart(2,"0");
-      const client = e.client.trim();
-      const key = monthKey + "||" + client;
+    tbody.querySelectorAll("input").forEach(inp=>{
+      inp.addEventListener("change", ()=>{
+        const all = load(K.clients, []);
+        const id = inp.dataset.editName || inp.dataset.editHour || inp.dataset.editKm;
+        const c = all.find(x=>x.id===id);
+        if(!c) return;
+        if(inp.dataset.editName) c.name = inp.value.trim() || c.name;
+        if(inp.dataset.editHour) c.rateHour = Number(inp.value||0);
+        if(inp.dataset.editKm) c.rateKm = Number(inp.value||0);
+        save(K.clients, all);
+        renderRows();
+        buildInvoicePreview();
+      });
+    });
 
-      let hoursVal = parseFloat((e.hours || "0").toString().replace(",", "."));
-      if (isNaN(hoursVal)) hoursVal = 0;
-      let kmVal = parseFloat(e.km || 0);
-      if (isNaN(kmVal)) kmVal = 0;
+    tbody.querySelectorAll("button[data-del-client]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.dataset.delClient;
+        if(!confirm("Klant verwijderen?")) return;
+        save(K.clients, load(K.clients, []).filter(x=>x.id!==id));
+        renderClients();
+        renderRows();
+        buildInvoicePreview();
+      });
+    });
 
-      if (!map.has(key)) {
-        map.set(key, { monthKey, client, hours: 0, km: 0 });
+    renderRows();
+  }
+
+  // Invoice number
+  function computeNextInvoiceNumber(dateISO){
+    const log = load(K.invoiceLog, { base:20260001, lastIssuedMonth:null, lastNumber:20260000 });
+    const d = dateISO ? toDate(dateISO) : new Date();
+    const mKey = sameMonthKey(d);
+    if(log.lastIssuedMonth === mKey) return log.lastNumber;
+    return Math.max(log.base, (log.lastNumber||log.base-1)+1);
+  }
+  function refreshInvoiceNumber(){
+    const invDate = el("invDate").value || todayISO();
+    el("invNumber").value = String(computeNextInvoiceNumber(invDate));
+  }
+
+  // Invoice preview
+  function buildInvoiceData(){
+    const rows = filteredRows();
+    const clients = load(K.clients, []);
+    const invDate = el("invDate").value || todayISO();
+    const dueDays = Number(el("invDueDays").value||30);
+    const vatPct = Number(el("invVatPct").value||0);
+
+    const d = toDate(invDate);
+    const due = new Date(d); due.setDate(due.getDate()+dueDays);
+    const dueISO = `${due.getFullYear()}-${pad2(due.getMonth()+1)}-${pad2(due.getDate())}`;
+
+    const groups = new Map();
+    for(const r of rows){
+      const c = clients.find(x=>x.id===r.clientId);
+      const key = r.clientId || "unknown";
+      if(!groups.has(key)){
+        groups.set(key, { clientId:key, clientName:c?.name||"Onbekend", rateHour:Number(c?.rateHour||0), rateKm:Number(c?.rateKm||0), hours:0, km:0, rows:[] });
       }
-      const item = map.get(key);
-      item.hours += hoursVal;
-      item.km += kmVal;
+      const g = groups.get(key);
+      g.hours += Number(r.hours||0);
+      g.km += Number(r.km||0);
+      g.rows.push(r);
     }
 
-    const rows = Array.from(map.values());
-    rows.sort((a,b)=>{
-      if (a.monthKey < b.monthKey) return 1;
-      if (a.monthKey > b.monthKey) return -1;
-      return a.client.localeCompare(b.client);
+    const items = Array.from(groups.values()).sort((a,b)=>a.clientName.localeCompare(b.clientName));
+    let net=0;
+    items.forEach(it=>{
+      it.amountHours = it.hours * it.rateHour;
+      it.amountKm = it.km * it.rateKm;
+      it.subtotal = it.amountHours + it.amountKm;
+      net += it.subtotal;
     });
+    const vat = net * (vatPct/100);
+    const gross = net + vat;
 
-    for (const r of rows) {
-      const [year,month] = r.monthKey.split("-");
-      const label = parseInt(month,10) + "-" + year;
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${label}</td>
-        <td>${r.client}</td>
-        <td>${r.hours.toFixed(2).replace(/\.00$/,"")}</td>
-        <td>${r.km.toFixed(0)}</td>
-      `;
-      monthlyBodyEl.appendChild(tr);
-    }
+    return { invNumber: el("invNumber").value, invDate, dueISO, vatPct, items, totals:{ net, vat, gross }, rowsCount: rows.length };
   }
 
-  function formatEntryForWhatsApp(e) {
-    const dateLine = formatDateShort(e.date);
-    const timeLine = `${e.timeFrom || "?"} - ${e.timeTo || "?"}`;
-    const hoursStr = e.hours !== "" && e.hours != null ? e.hours : "0";
-    const kmStr = e.km !== "" && e.km != null ? e.km : "0";
-    const line3 = `${hoursStr} h.   ${kmStr} km`;
-    const line4 = `${e.client || ""}, ${e.job || ""}`;
-    return `${dateLine}
-${timeLine}
-${line3}
-${line4}`;
-  }
+  function esc(s){ return (s||"").replaceAll("<","&lt;"); }
 
-  function setActiveScreen(screen) {
-    if (screen === "input") {
-      screenInput.classList.add("active");
-      screenOverview.classList.remove("active");
-      tabInput.classList.add("active");
-      tabOverview.classList.remove("active");
-    } else {
-      screenInput.classList.remove("active");
-      screenOverview.classList.add("active");
-      tabInput.classList.remove("active");
-      tabOverview.classList.add("active");
-      renderOverview();
-    }
-  }
+  function buildInvoicePreview(){
+    const pv = el("invoicePreview");
+    if(!pv) return;
 
-  tabInput.addEventListener("click", () => setActiveScreen("input"));
-  tabOverview.addEventListener("click", () => setActiveScreen("overview"));
+    const sender = load(K.settings, {});
+    const rec = load(K.recipient, {});
+    const data = buildInvoiceData();
+    const sym = "€";
 
-  // mark manual override when user edits hours
-  hoursInput.addEventListener("input", () => {
-    manualOverride = true;
-  });
-
-  saveEntryBtn.addEventListener("click", () => {
-    ensureDate();
-    const date = dateInput.value;
-    const timeFrom = timeFromInput.value;
-    const timeTo = timeToInput.value;
-    let hours = hoursInput.value.trim();
-    const km = kmInput.value.trim();
-    const client = clientInput.value.trim();
-    const job = jobInput.value.trim();
-
-    if (!hours) {
-      manualOverride = false;
-      computeHoursFromTimes();
-      hours = hoursInput.value.trim();
-    }
-
-    if (!date || !timeFrom || !timeTo || !hours || !km || !client || !job) {
-      showToast("Vul minimaal datum, tijden, uren, km, opdrachtgever & job in.");
+    if(data.rowsCount===0){
+      pv.innerHTML = `<div class="muted">Geen regels</div>`;
       return;
     }
 
-    const entry = {
-      id: Date.now() + "_" + Math.random().toString(16).slice(2),
-      createdAt: Date.now(),
-      date,
-      timeFrom,
-      timeTo,
-      hours,
-      km,
-      client,
-      job,
+    const senderLines = [
+      `<b>${esc(sender.senderName)}</b>`,
+      esc(sender.senderAddr),
+      sender.senderKvk ? `KvK: ${esc(sender.senderKvk)}` : "",
+      sender.senderVat ? `BTW: ${esc(sender.senderVat)}` : "",
+      sender.senderIban ? `IBAN: ${esc(sender.senderIban)}` : "",
+      sender.senderEmail ? esc(sender.senderEmail) : ""
+    ].filter(Boolean).join("<br>");
+
+    const recLines = [
+      `<b>${esc(rec.recName)}</b>`,
+      esc(rec.recAddr)
+    ].filter(Boolean).join("<br>");
+
+    let html = `
+      <div class="print-sheet">
+      <div class="print-only print-header">
+        <div style="flex:1">
+          <div class="print-title">Factuur</div>
+          <div class="print-meta mono">Nummer: <b>${data.invNumber}</b></div>
+          <div class="print-meta mono">Datum: ${data.invDate}</div>
+          <div class="print-meta mono">Verval: ${data.dueISO}</div>
+        </div>
+        <div style="flex:1">
+          <div class="print-box-title">Afzender</div>
+          <div class="print-block">${senderLines}</div>
+        </div>
+        <div style="flex:1">
+          <div class="print-box-title">Ontvanger</div>
+          <div class="print-block">${recLines}</div>
+        </div>
+      </div>
+
+      <div class="no-print" style="margin-bottom:10px">
+        <div class="split" style="gap:18px">
+          <div>
+            <div style="font-size:18px;font-weight:800;margin-bottom:6px">FACTUUR</div>
+            <div class="mono">Nummer: <b>${data.invNumber}</b></div>
+            <div class="mono">Datum: ${data.invDate}</div>
+            <div class="mono">Verval: ${data.dueISO}</div>
+          </div>
+          <div>
+            <div class="muted small">Afzender</div>
+            <div class="small">${senderLines}</div>
+          </div>
+          <div>
+            <div class="muted small">Ontvanger</div>
+            <div class="small">${recLines}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Klant</th>
+              <th class="right">Uren</th>
+              <th class="right">Tarief</th>
+              <th class="right">Bedrag</th>
+              <th class="right">KM</th>
+              <th class="right">Tarief</th>
+              <th class="right">Bedrag</th>
+              <th class="right">Subtotaal</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    data.items.forEach(it=>{
+      html += `
+        <tr>
+          <td><b>${esc(it.clientName)}</b><div class="muted small">${it.rows.length}</div></td>
+          <td class="right mono">${fmtNum(it.hours,2)}</td>
+          <td class="right mono">${sym}${fmtNum(it.rateHour,2)}</td>
+          <td class="right mono">${sym}${fmtNum(it.amountHours,2)}</td>
+          <td class="right mono">${fmtNum(it.km,0)}</td>
+          <td class="right mono">${sym}${fmtNum(it.rateKm,2)}</td>
+          <td class="right mono">${sym}${fmtNum(it.amountKm,2)}</td>
+          <td class="right mono"><b>${sym}${fmtNum(it.subtotal,2)}</b></td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+
+      <div class="split" style="margin-top:14px;align-items:flex-end">
+        <div class="muted small">${esc(rec.footerNote||"")}</div>
+        <div style="min-width:260px">
+          <table>
+            <tbody>
+              <tr><td class="muted">Subtotaal</td><td class="right mono">${sym}${fmtNum(data.totals.net,2)}</td></tr>
+              <tr><td class="muted">BTW</td><td class="right mono">${sym}${fmtNum(data.totals.vat,2)}</td></tr>
+              <tr><td><b>Totaal</b></td><td class="right mono"><b>${sym}${fmtNum(data.totals.gross,2)}</b></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="print-only print-footer">
+        <div>${esc(sender.senderName||"")}</div>
+        <div>EUR</div>
+      </div>
+      </div>
+    `;
+    pv.innerHTML = html;
+  }
+
+  // Settings
+  function renderSettings(){
+    const s = load(K.settings, {});
+    el("sSenderName").value = s.senderName||"";
+    el("sSenderAddr").value = s.senderAddr||"";
+    el("sSenderKvk").value = s.senderKvk||"";
+    el("sSenderVat").value = s.senderVat||"";
+    el("sSenderIban").value = s.senderIban||"";
+    el("sSenderEmail").value = s.senderEmail||"";
+
+    const r = load(K.recipient, {});
+    el("sRecName").value = r.recName||"";
+    el("sRecAddr").value = r.recAddr||"";
+    el("sFooterNote").value = r.footerNote||"";
+  }
+
+  // WhatsApp export
+  function buildWhatsAppTextForDay(dateISO){
+    const rows = load(K.rows, []).filter(r => r.date === dateISO).sort((a,b)=> (a.from>b.from?1:-1));
+    const clients = load(K.clients, []);
+    if(rows.length===0) return "";
+
+    let sumH=0, sumKm=0;
+    const lines = [];
+    lines.push(`Diensten ${dateISO}`);
+    rows.forEach((r, idx)=>{
+      const cName = (clients.find(c=>c.id===r.clientId)||{}).name || "Onbekend";
+      const h = Number(r.hours||0);
+      const km = Number(r.km||0);
+      sumH += h; sumKm += km;
+      const desc = (r.desc||"").trim();
+      const dline = desc ? ` — ${desc}` : "";
+      lines.push(`${idx+1}) ${cName}: ${r.from}-${r.to} | ${fmtNum(h,2)}u | ${fmtNum(km,0)} km${dline}`);
+    });
+    lines.push(`Totaal: ${fmtNum(sumH,2)}u • ${fmtNum(sumKm,0)} km`);
+    return lines.join("\n");
+  }
+
+  async function copyToClipboard(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    }catch(e){
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position="fixed";
+      ta.style.left="-9999px";
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try{ document.execCommand("copy"); }catch(_){}
+      document.body.removeChild(ta);
+      return true;
+    }
+  }
+
+  // Lock day
+  function setLockForDay(dateISO, locked){
+    const all = load(K.rows, []);
+    all.forEach(r=>{
+      if(r.date === dateISO) r.locked = !!locked;
+    });
+    save(K.rows, all);
+  }
+
+  // Buttons
+  el("btnAddRow").addEventListener("click", ()=>{
+    const date = el("hDate").value;
+    const clientId = el("hClient").value;
+    const from = el("hFrom").value;
+    const to = el("hTo").value;
+    const breakMin = Number(el("hBreak").value||0);
+    const km = Number(el("hKm").value||0);
+    const desc = el("hDesc").value||"";
+    const hours = calcHours(date, from, to, breakMin);
+
+    if(!date || !clientId || !from || !to){
+      alert("Vul datum, klant, van, tot.");
+      return;
+    }
+
+    const rows = load(K.rows, []);
+    rows.push({
+      id: uid(),
+      date, clientId, from, to,
+      breakMin,
+      km: clamp(km,0,999999),
+      hours: Number(hours.toFixed(4)),
+      desc,
       locked: false
+    });
+    save(K.rows, rows);
+
+    el("hKm").value="0";
+    el("hDesc").value="";
+    el("hBreak").value="0";
+    updateAutoHours();
+    renderRows();
+    buildInvoicePreview();
+  });
+
+  el("btnClearForm").addEventListener("click", ()=>{
+    el("hFrom").value=""; el("hTo").value=""; el("hBreak").value="0"; el("hKm").value="0"; el("hDesc").value="";
+    updateAutoHours();
+  });
+
+  el("btnClearAll").addEventListener("click", ()=>{
+    const all = load(K.rows, []);
+    const lockedCount = all.filter(r=>r.locked).length;
+    const msg = lockedCount>0 ? "Alles wissen verwijdert alleen unlocked regels. Doorgaan?" : "Alles wissen?";
+    if(!confirm(msg)) return;
+    save(K.rows, all.filter(r=>r.locked));
+    renderRows();
+    buildInvoicePreview();
+  });
+
+  el("btnApplyFilter").addEventListener("click", ()=>{
+    save(K.filters, { from: el("fFrom").value||"", to: el("fTo").value||"", clientId: el("fClient").value||"all", quick: el("fQuick").value||"all" });
+    renderRows();
+    buildInvoicePreview();
+  });
+
+  el("btnResetFilter").addEventListener("click", ()=>{
+    save(K.filters, { from:"", to:"", clientId:"all", quick:"thisMonth" });
+    renderRows();
+    buildInvoicePreview();
+  });
+
+  el("btnExportDayWhatsApp").addEventListener("click", async ()=>{
+    const dateISO = el("hDate").value || todayISO();
+    const text = buildWhatsAppTextForDay(dateISO);
+    if(!text){ alert("Geen diensten."); return; }
+    await copyToClipboard(text);
+
+    const encoded = encodeURIComponent(text);
+    const wa1 = `whatsapp://send?text=${encoded}`;
+    const wa2 = `https://wa.me/?text=${encoded}`;
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if(isMobile){
+      window.location.href = wa1;
+      setTimeout(()=>{ window.location.href = wa2; }, 600);
+    }else{
+      window.open(wa2, "_blank");
+    }
+  });
+
+  el("btnLockDay").addEventListener("click", ()=>{
+    const dateISO = el("hDate").value || todayISO();
+    const rowsDay = load(K.rows, []).filter(r=>r.date===dateISO);
+    if(rowsDay.length===0){ alert("Geen diensten."); return; }
+    setLockForDay(dateISO, true);
+    renderRows();
+    buildInvoicePreview();
+  });
+
+  el("btnUnlockDay").addEventListener("click", ()=>{
+    const dateISO = el("hDate").value || todayISO();
+    const rowsDay = load(K.rows, []).filter(r=>r.date===dateISO);
+    if(rowsDay.length===0){ alert("Geen diensten."); return; }
+    setLockForDay(dateISO, false);
+    renderRows();
+    buildInvoicePreview();
+  });
+
+  // Clients add
+  function renderClients(){
+    const clients = load(K.clients, []);
+    el("clientsCountPill").textContent = String(clients.length);
+    const tbody = el("clientsTbody");
+    tbody.innerHTML = "";
+
+    clients.forEach(c=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML = `
+        <td><input data-edit-name="${c.id}" value="${(c.name||"").replaceAll('"','&quot;')}" /></td>
+        <td class="right"><input class="right mono" data-edit-hour="${c.id}" type="number" step="0.5" min="0" value="${Number(c.rateHour||0)}" /></td>
+        <td class="right"><input class="right mono" data-edit-km="${c.id}" type="number" step="0.01" min="0" value="${Number(c.rateKm||0)}" /></td>
+        <td class="right"><button type="button" class="danger" data-del-client="${c.id}">Verwijder</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll("input").forEach(inp=>{
+      inp.addEventListener("change", ()=>{
+        const all = load(K.clients, []);
+        const id = inp.dataset.editName || inp.dataset.editHour || inp.dataset.editKm;
+        const c = all.find(x=>x.id===id);
+        if(!c) return;
+        if(inp.dataset.editName) c.name = inp.value.trim() || c.name;
+        if(inp.dataset.editHour) c.rateHour = Number(inp.value||0);
+        if(inp.dataset.editKm) c.rateKm = Number(inp.value||0);
+        save(K.clients, all);
+        renderRows();
+        buildInvoicePreview();
+      });
+    });
+
+    tbody.querySelectorAll("button[data-del-client]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const id = btn.dataset.delClient;
+        if(!confirm("Klant verwijderen?")) return;
+        save(K.clients, load(K.clients, []).filter(x=>x.id!==id));
+        renderClients();
+        renderRows();
+        buildInvoicePreview();
+      });
+    });
+
+    renderRows();
+  }
+
+  el("btnAddClient").addEventListener("click", ()=>{
+    const name = (el("cName").value||"").trim();
+    const rateHour = Number(el("cRateHour").value||0);
+    const rateKm = Number(el("cRateKm").value||0);
+    if(!name){ alert("Geef klantnaam."); return; }
+    const clients = load(K.clients, []);
+    clients.push({ id: uid(), name, rateHour, rateKm });
+    save(K.clients, clients);
+    el("cName").value=""; el("cRateHour").value="0"; el("cRateKm").value="0";
+    renderClients();
+  });
+
+  el("btnSetDefaults").addEventListener("click", ()=>{
+    const clients = load(K.clients, []);
+    clients.push({ id: uid(), name:"Voorbeeld klant", rateHour: 85, rateKm: 0.35 });
+    save(K.clients, clients);
+    renderClients();
+  });
+
+  // Invoice actions
+  el("btnBuildInvoice").addEventListener("click", ()=>{
+    refreshInvoiceNumber();
+    buildInvoicePreview();
+  });
+
+  el("btnPrint").addEventListener("click", ()=>{
+    refreshInvoiceNumber();
+    buildInvoicePreview();
+    window.print();
+  });
+
+  el("invDate").addEventListener("change", refreshInvoiceNumber);
+
+  el("btnAdvanceNumber").addEventListener("click", ()=>{
+    const dateISO = el("invDate").value || todayISO();
+    const d = toDate(dateISO);
+    const mKey = sameMonthKey(d);
+    const next = computeNextInvoiceNumber(dateISO);
+    const log = load(K.invoiceLog, { base:20260001, lastIssuedMonth:null, lastNumber:20260000 });
+
+    if(log.lastIssuedMonth === mKey){
+      alert("Nummer al vastgelegd.");
+      return;
+    }
+
+    // vastleggen
+    log.lastIssuedMonth = mKey;
+    log.lastNumber = next;
+    save(K.invoiceLog, log);
+    refreshInvoiceNumber();
+
+    // Link naar boekhouding: maak automatisch een verkoopfactuur boekstuk (1x per factuurnummer)
+    try{
+      const docs = load(K.bkDocs, []);
+      const invNo = String(next);
+      const exists = docs.some(x => x && x.source==="invoice" && String(x.invNumber)===invNo);
+      if(!exists){
+        const inv = buildInvoiceData(); // gebruikt huidige filter (Overzicht)
+        const rec = load(K.recipient, {});
+        const rowsForInv = filteredRows();
+        let periodTxt = "";
+        if(rowsForInv.length){
+          const dates = rowsForInv.map(r=>r.date).sort();
+          periodTxt = `${dates[dates.length-1]} – ${dates[0]}`;
+        }
+        const party = (rec && rec.recName) ? rec.recName : "Ontvanger";
+        const desc = `Factuur ${invNo}${periodTxt ? " ("+periodTxt+")" : ""}`;
+
+        docs.push({
+          id: uid(),
+          type: "sales_invoice",
+          date: inv.invDate,
+          party,
+          desc,
+          net: Number((inv.totals.net||0).toFixed(2)),
+          vat: Number((inv.totals.vat||0).toFixed(2)),
+          gross: Number((inv.totals.gross||0).toFixed(2)),
+          vatPct: Number(inv.vatPct||0),
+          bankId: "",
+          file: null,
+          source: "invoice",
+          invNumber: invNo
+        });
+        save(K.bkDocs, docs);
+        // refresh bookkeeping if user is there
+        const activeBooks = document.getElementById("screen-books")?.classList.contains("active");
+        if(activeBooks) renderBookkeeping();
+      }
+    }catch(e){
+      // stil falen: factuur vastleggen is belangrijker
+      console.warn("Bookkeeping link failed", e);
+    }
+  });
+
+
+  el("btnResetNumber").addEventListener("click", ()=>{
+    if(confirm("Reset?")){
+      save(K.invoiceLog, { base:20260001, lastIssuedMonth:null, lastNumber:20260000 });
+      refreshInvoiceNumber();
+    }
+  });
+
+  // Settings save
+  el("btnSaveSettings").addEventListener("click", ()=>{
+    save(K.settings, {
+      senderName: (el("sSenderName").value||"").trim(),
+      senderAddr: (el("sSenderAddr").value||"").trim(),
+      senderKvk: (el("sSenderKvk").value||"").trim(),
+      senderVat: (el("sSenderVat").value||"").trim(),
+      senderIban: (el("sSenderIban").value||"").trim(),
+      senderEmail: (el("sSenderEmail").value||"").trim()
+    });
+    buildInvoicePreview();
+  });
+
+  el("btnSaveRecipient").addEventListener("click", ()=>{
+    save(K.recipient, {
+      recName: (el("sRecName").value||"").trim(),
+      recAddr: (el("sRecAddr").value||"").trim(),
+      footerNote: (el("sFooterNote").value||"").trim()
+    });
+    buildInvoicePreview();
+  });
+
+  // Export/import
+el("btnExport").addEventListener("click", ()=>{
+  const payload = {
+    meta: { app:"HLI Uren-KM-Factuur-Boekhouding", version:"V11.1", exportedAt: new Date().toISOString() },
+    clients: load(K.clients, []),
+    rows: load(K.rows, []),
+    settings: load(K.settings, {}),
+    recipient: load(K.recipient, {}),
+    invoiceLog: load(K.invoiceLog, {}),
+    filters: load(K.filters, {}),
+    bookkeeping: {
+      banks: load(K.bkBanks, []),
+      docs: load(K.bkDocs, []),
+      tx: load(K.bkTx, []),
+      period: load(K.bkPeriod, null),
+      prefs: load(K.bkPrefs, null)
+    }
+  };
+    const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download = `hli_backup_${todayISO()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  el("btnImport").addEventListener("click", ()=> el("importFile").click());
+el("importFile").addEventListener("change", async (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  const txt = await f.text();
+  try{
+    const p = JSON.parse(txt);
+
+    // core
+    if(p.clients) save(K.clients, p.clients);
+    if(p.rows) save(K.rows, p.rows);
+    if(p.settings) save(K.settings, p.settings);
+    if(p.recipient) save(K.recipient, p.recipient);
+    if(p.invoiceLog) save(K.invoiceLog, p.invoiceLog);
+    if(p.filters) save(K.filters, p.filters);
+
+    // bookkeeping (new backups)
+    if(p.bookkeeping){
+      if(Array.isArray(p.bookkeeping.banks)) save(K.bkBanks, p.bookkeeping.banks);
+      if(Array.isArray(p.bookkeeping.docs)) save(K.bkDocs, p.bookkeeping.docs);
+      if(Array.isArray(p.bookkeeping.tx)) save(K.bkTx, p.bookkeeping.tx);
+      if(p.bookkeeping.period) save(K.bkPeriod, p.bookkeeping.period);
+      if(p.bookkeeping.prefs) save(K.bkPrefs, p.bookkeeping.prefs);
+    }
+
+    // bookkeeping (legacy backups where keys might be top-level)
+    if(p.bkBanks) save(K.bkBanks, p.bkBanks);
+    if(p.bkDocs) save(K.bkDocs, p.bkDocs);
+    if(p.bkTx) save(K.bkTx, p.bkTx);
+    if(p.bkPeriod) save(K.bkPeriod, p.bkPeriod);
+    if(p.bkPrefs) save(K.bkPrefs, p.bkPrefs);
+
+    renderClients();
+    renderRows();
+    renderSettings();
+    refreshInvoiceNumber();
+    buildInvoicePreview();
+    renderBookkeeping();
+  }catch(err){
+    alert("Ongeldig bestand.");
+  }
+});
+
+  // Boekhouding helpers
+  const eur = (n)=> "€" + fmtNum(Number(n||0),2);
+
+  function bkDefaultPeriod(){
+    const d = new Date();
+    const m = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+    return { mode:"month", month:m, quarter: Math.floor(d.getMonth()/3)+1, year:d.getFullYear(), from:"", to:"" };
+  }
+
+  function bkLoadPeriod(){
+    const p = load(K.bkPeriod, null) || bkDefaultPeriod();
+    if(!p.month){
+      p.month = bkDefaultPeriod().month;
+    }
+    return p;
+  }
+
+  function bkPeriodToRange(p){
+    const mode = p.mode || "month";
+    if(mode==="month"){
+      const [yy,mm]= (p.month||bkDefaultPeriod().month).split("-").map(Number);
+      const from = new Date(yy, mm-1, 1);
+      const to = new Date(yy, mm, 0);
+      return { fromISO:`${from.getFullYear()}-${pad2(from.getMonth()+1)}-01`,
+               toISO:`${to.getFullYear()}-${pad2(to.getMonth()+1)}-${pad2(to.getDate())}` };
+    }
+    if(mode==="quarter"){
+      const y = Number(p.year||new Date().getFullYear());
+      const q = Number(p.quarter||1);
+      const startMonth = (q-1)*3;
+      const from = new Date(y, startMonth, 1);
+      const to = new Date(y, startMonth+3, 0);
+      return { fromISO:`${from.getFullYear()}-${pad2(from.getMonth()+1)}-${pad2(from.getDate())}`,
+               toISO:`${to.getFullYear()}-${pad2(to.getMonth()+1)}-${pad2(to.getDate())}` };
+    }
+    if(mode==="year"){
+      const y = Number(p.year||new Date().getFullYear());
+      return { fromISO:`${y}-01-01`, toISO:`${y}-12-31` };
+    }
+    // range
+    const fromISO = p.from || "";
+    const toISO = p.to || "";
+    return { fromISO, toISO };
+  }
+
+  function bkInRange(dateISO, fromISO, toISO){
+    if(!dateISO) return false;
+    const d = toDate(dateISO);
+    if(fromISO){
+      const f = toDate(fromISO);
+      if(d < f) return false;
+    }
+    if(toISO){
+      const t = toDate(toISO);
+      if(d > t) return false;
+    }
+    return true;
+  }
+
+  function bkComputeDocAmounts(gross, vatPct){
+    const g = Number(gross||0);
+    const v = Number(vatPct||0);
+    if(v<=0) return { net:g, vat:0, gross:g };
+    const net = g / (1 + v/100);
+    const vat = g - net;
+    return { net, vat, gross:g };
+  }
+
+  function bkTypeLabel(t){
+    if(t==="sales_invoice") return "Verkoop";
+    if(t==="purchase_invoice") return "Inkoop";
+    return "Bon";
+  }
+
+  async function bkReadFileSmall(file){
+    if(!file) return null;
+    const max = 500*1024; // 500KB
+    if(file.size > max){
+      return { name:file.name, mime:file.type||"", note:"Te groot voor opslag" };
+    }
+    const dataUrl = await new Promise((res, rej)=>{
+      const fr = new FileReader();
+      fr.onload=()=>res(fr.result);
+      fr.onerror=()=>rej(fr.error);
+      fr.readAsDataURL(file);
+    });
+    return { name:file.name, mime:file.type||"", dataUrl };
+  }
+
+  function bkRenderBankSelects(){
+    const banks = load(K.bkBanks, []);
+    const sel1 = el("bkDocBank");
+    const sel2 = el("bkTxBank");
+    const selF1 = document.getElementById("bkDocsBankFilter");
+    const selF2 = document.getElementById("bkTxBankFilter");
+
+    // input selects (add forms)
+    const optNone = `<option value="">Geen</option>`;
+    sel1.innerHTML = optNone;
+    sel2.innerHTML = "";
+    banks.forEach(b=>{
+      const o1=document.createElement("option"); o1.value=b.id; o1.textContent=b.name; sel1.appendChild(o1);
+      const o2=document.createElement("option"); o2.value=b.id; o2.textContent=b.name; sel2.appendChild(o2);
+    });
+    if(!sel2.value && banks[0]) sel2.value = banks[0].id;
+
+    // filter selects
+    const fillFilter = (sel, includeNone)=>{
+      if(!sel) return;
+      const cur = sel.value || "all";
+      sel.innerHTML = "";
+      const oAll=document.createElement("option"); oAll.value="all"; oAll.textContent="Alle banken"; sel.appendChild(oAll);
+      if(includeNone){
+        const oN=document.createElement("option"); oN.value=""; oN.textContent="Geen"; sel.appendChild(oN);
+      }
+      banks.forEach(b=>{
+        const o=document.createElement("option"); o.value=b.id; o.textContent=b.name; sel.appendChild(o);
+      });
+      // restore selection if possible
+      const exists=[...sel.options].some(o=>o.value===cur);
+      sel.value = exists ? cur : "all";
     };
 
-    entries.push(entry);
-    saveEntries();
-    addClientName(client);
-    renderEntryList();
-    renderOverview();
-    showToast("Registratie opgeslagen ✅");
-  });
+    fillFilter(selF1, true);  // boekstukken kunnen "Geen" hebben
+    fillFilter(selF2, false); // bankmutaties zijn altijd gelinkt aan bank
+  }
 
-  timeFromInput.addEventListener("change", () => {
-    ensureDate();
-    if (!manualOverride) computeHoursFromTimes();
-  });
+  function bkCalcBankSummaries(){
+    const banks = load(K.bkBanks, []);
+    const tx = load(K.bkTx, []);
+    const byBank = new Map();
+    banks.forEach(b=> byBank.set(b.id, { bank:b, delta:0 }));
+    tx.forEach(t=>{
+      const item = byBank.get(t.bankId);
+      if(!item) return;
+      item.delta += Number(t.amount||0);
+    });
+    return Array.from(byBank.values()).map(x=>{
+      const start = Number(x.bank.start||0);
+      const delta = Number(x.delta||0);
+      const saldo = start + delta;
+      return { id:x.bank.id, name:x.bank.name, start, delta, saldo };
+    });
+  }
 
-  timeToInput.addEventListener("change", () => {
-    ensureDate();
-    if (!manualOverride) computeHoursFromTimes();
-  });
+  function bkComputeKPIs(){
+    const docs = load(K.bkDocs, []);
+    const p = bkLoadPeriod();
+    const {fromISO,toISO} = bkPeriodToRange(p);
+    let revenue=0, costs=0, vatOut=0, vatIn=0;
 
-  copyLastBtn.addEventListener("click", async () => {
-    if (!entries.length) {
-      showToast("Nog geen registraties om te kopiëren.");
-      return;
-    }
-    const latest = [...entries].sort((a,b)=>b.createdAt-a.createdAt)[0];
-    const text = formatEntryForWhatsApp(latest);
-
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        showToast("Tekst gekopieerd. Plak in WhatsApp 📲");
-      } else {
-        const tmp = document.createElement("textarea");
-        tmp.value = text;
-        document.body.appendChild(tmp);
-        tmp.select();
-        document.execCommand("copy");
-        document.body.removeChild(tmp);
-        showToast("Tekst gekopieerd. Plak in WhatsApp 📲");
+    docs.forEach(d=>{
+      if(!bkInRange(d.date, fromISO, toISO)) return;
+      const net = Number(d.net||0);
+      const vat = Number(d.vat||0);
+      if(d.type==="sales_invoice"){
+        revenue += net;
+        vatOut += vat;
+      }else{
+        costs += net;
+        vatIn += vat;
       }
-    } catch (err) {
-      console.error(err);
-      showToast("Kopiëren mislukt, probeer opnieuw.");
-      return;
-    }
+    });
 
-    const waUrl = "https://wa.me/?text=" + encodeURIComponent(text);
-    window.open(waUrl, "_blank");
-  });
+    const profit = revenue - costs;
+    const vatSaldo = vatOut - vatIn;
+    return { revenue, costs, profit, vatSaldo };
+  }
 
-  applyEntryActionBtn.addEventListener("click", () => {
-    const action = entryActionSelect.value;
-    if (!action) {
-      showToast("Kies eerst een actie.");
-      return;
-    }
-    const checked = Array.from(document.querySelectorAll(".entry-check:checked"));
-    const idsSelected = checked.map(cb => cb.dataset.id);
-    if (!checked.length) {
-      showToast("Geen registraties aangevinkt.");
-      return;
-    }
 
-    if (action === "delete") {
-      const confirmDelete = window.confirm("Weet je zeker dat je de geselecteerde registraties wilt verwijderen?");
-      if (!confirmDelete) return;
-      entries = entries.filter(e => !(idsSelected.includes(e.id) && !e.locked));
-      saveEntries();
-      renderEntryList();
-      renderOverview();
-      showToast("Niet-gelockte registraties verwijderd.");
-      entryActionSelect.value = "";
-    } else if (action === "lock") {
-      entries.forEach(e => {
-        if (idsSelected.includes(e.id)) e.locked = true;
-      });
-      saveEntries();
-      renderEntryList();
-      renderOverview();
-      showToast("Registraties gelockt.");
-      entryActionSelect.value = "";
-    } else if (action === "unlock") {
-      let any = false;
-      entries.forEach(e => {
-        if (idsSelected.includes(e.id) && e.locked) {
-          e.locked = false;
-          any = true;
-        }
-      });
-      if (!any) {
-        showToast("Geen gelockte registraties geselecteerd.");
+  function bkComputeTotalsForRange(fromISO,toISO){
+    const docs = load(K.bkDocs, []);
+    let revenue=0, costs=0, vatOut=0, vatIn=0;
+    docs.forEach(d=>{
+      if(!bkInRange(d.date, fromISO, toISO)) return;
+      const net = Number(d.net||0);
+      const vat = Number(d.vat||0);
+      if(d.type==="sales_invoice"){
+        revenue += net; vatOut += vat;
       } else {
-        saveEntries();
-        renderEntryList();
-        renderOverview();
-        showToast("Geselecteerde registraties ontgrendeld.");
+        costs += net; vatIn += vat;
       }
-      entryActionSelect.value = "";
+    });
+    const profit = revenue - costs;
+    const vatSaldo = vatOut - vatIn;
+    return { revenue, costs, profit, vatOut, vatIn, vatSaldo, revenueGross: revenue+vatOut, costsGross: costs+vatIn };
+  }
+
+  function bkQuarterToRange(year, quarter){
+    const q = Number(quarter)||1;
+    const y = Number(year)||new Date().getFullYear();
+    const startMonth = (q-1)*3; // 0-based
+    const from = new Date(y, startMonth, 1);
+    const to = new Date(y, startMonth+3, 0); // last day of quarter
+    const fromISO = `${from.getFullYear()}-${pad2(from.getMonth()+1)}-${pad2(from.getDate())}`;
+    const toISO = `${to.getFullYear()}-${pad2(to.getMonth()+1)}-${pad2(to.getDate())}`;
+    return { fromISO, toISO };
+  }
+
+  function bkYearToRange(year){
+    const y = Number(year)||new Date().getFullYear();
+    return { fromISO: `${y}-01-01`, toISO: `${y}-12-31` };
+  }
+
+  function renderBookkeeping(){
+  const banks = load(K.bkBanks, []);
+  const docs  = load(K.bkDocs, []);
+  const tx    = load(K.bkTx, []);
+
+  // period prefs
+  const p = load(K.bkPeriod, { from:"", to:"" });
+  el("bkFrom").value = p.from||"";
+  el("bkTo").value   = p.to||"";
+
+  // restore prefs
+  const prefs = load(K.bkPrefs, {});
+  if(prefs.vatYear) el("bkVatYear").value = prefs.vatYear;
+  if(prefs.vatQuarter) el("bkVatQuarter").value = String(prefs.vatQuarter);
+  if(prefs.year) el("bkYear").value = prefs.year;
+  if(prefs.taxPct!=null) el("bkTaxPct").value = String(prefs.taxPct);
+  // show currently applied list filters in UI
+  const active = load(K.bkActiveFilters, { listBank:"all", listType:"all", listParty:"", listQuery:"" });
+  if(el("bkListBank")) el("bkListBank").value = active.listBank || "all";
+  if(el("bkListType")) el("bkListType").value = active.listType || "all";
+// Ensure selects have bank options
+  const fillBankSelect = (selId, includeAll=true)=>{
+    const s = el(selId);
+    if(!s) return;
+    const cur = s.value;
+    s.innerHTML = "";
+    if(includeAll){
+      const o=document.createElement("option");
+      o.value="all";
+      o.textContent="Alle banken";
+      s.appendChild(o);
+    }
+    const o0=document.createElement("option");
+    o0.value="";
+    o0.textContent="—";
+    s.appendChild(o0);
+
+    banks.forEach(b=>{
+      const o=document.createElement("option");
+      o.value=b.id;
+      o.textContent=b.name;
+      s.appendChild(o);
+    });
+    if(cur) s.value = cur;
+  };
+
+  fillBankSelect("bkDocBank", false);
+  fillBankSelect("bkTxBank", false);
+  fillBankSelect("bkListBank", true);
+
+  el("bkBanksCount").textContent = String(banks.length);
+
+  // set dates default
+  if(!el("bkDocDate").value) el("bkDocDate").value = todayISO();
+  if(!el("bkTxDate").value) el("bkTxDate").value = todayISO();
+
+  // VAT / Year selects
+  const now = new Date();
+  const years = new Set();
+  docs.forEach(d=>{ if(d.date) years.add(d.date.slice(0,4)); });
+  tx.forEach(t=>{ if(t.date) years.add(t.date.slice(0,4)); });
+  years.add(String(now.getFullYear()));
+  const yearsArr=[...years].sort().reverse();
+
+  const fillYear = (id, curYear)=>{
+    const s=el(id); if(!s) return;
+    const cur=s.value || curYear;
+    s.innerHTML="";
+    yearsArr.forEach(y=>{
+      const o=document.createElement("option"); o.value=y; o.textContent=y; s.appendChild(o);
+    });
+    s.value = cur;
+  };
+  fillYear("bkVatYear", String(now.getFullYear()));
+  fillYear("bkYear", String(now.getFullYear()));
+
+  // Helper: EUR format
+  const eur = (n)=> "€" + (Number(n)||0).toFixed(2);
+
+  // Compute bank balances (start + tx)
+  const bankMap = new Map(banks.map(b=>[b.id, { ...b, start:Number(b.start||0), delta:0, saldo:Number(b.start||0) }]));
+  tx.forEach(t=>{
+    const b = bankMap.get(t.bankId);
+    if(b){
+      b.delta += Number(t.amount||0);
+      b.saldo += Number(t.amount||0);
     }
   });
 
-  loadEntries();
-  loadClients();
-  renderClientList();
-  renderEntryList();
-  renderOverview();
+  // Render bank summary
+  const banksBody = el("bkBanksSummaryBody");
+  banksBody.innerHTML="";
+  [...bankMap.values()].sort((a,b)=>a.name.localeCompare(b.name)).forEach(b=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML = `
+      <td>${esc(b.name)}</td>
+      <td class="right mono">${eur(b.start)}</td>
+      <td class="right mono">${eur(b.delta)}</td>
+      <td class="right mono"><b>${eur(b.saldo)}</b></td>
+    `;
+    banksBody.appendChild(tr);
+  });
+
+  // ---------- VAT quarter calc (docs only, 21% field stored per doc) ----------
+  const vatYear = el("bkVatYear").value;
+  const q = Number(el("bkVatQuarter").value||1);
+
+  const qStartMonth = (q-1)*3 + 1;
+  const qEndMonth = qStartMonth + 2;
+
+  const inQuarter = (dateStr)=>{
+    if(!dateStr || dateStr.length<10) return false;
+    const y = dateStr.slice(0,4);
+    const m = Number(dateStr.slice(5,7));
+    return y===vatYear && m>=qStartMonth && m<=qEndMonth;
+  };
+
+  let revNet=0, revVat=0, revGross=0;
+  let costNet=0, costVat=0, costGross=0;
+
+  docs.filter(d=>inQuarter(d.date)).forEach(d=>{
+    const gross = Number(d.gross||0);
+    const vat = Number(d.vat||0);
+    const net = Number(d.net||Math.max(0, gross - vat));
+    const isIncome = d.type==="sales_invoice";
+    if(isIncome){
+      revNet += net; revVat += vat; revGross += gross;
+    }else{
+      costNet += net; costVat += vat; costGross += gross;
+    }
+  });
+
+  el("bkVatRevNet").textContent = eur(revNet);
+  el("bkVatRevGross").textContent = eur(revGross);
+  el("bkVatOut").textContent = eur(revVat);
+  el("bkVatIn").textContent = eur(costVat);
+  el("bkVatPay").textContent = eur(revVat - costVat);
+
+  // KPI VAT
+  el("bkKpiVatPay").textContent = eur(revVat - costVat);
+  el("bkKpiVatOut").textContent = eur(revVat);
+  el("bkKpiVatIn").textContent = eur(costVat);
+
+  // ---------- Year overview (docs only) ----------
+  const year = el("bkYear").value;
+  let yRev=0, yCost=0, yVatOut=0, yVatIn=0;
+  docs.filter(d=>d.date && d.date.slice(0,4)===year).forEach(d=>{
+    const gross = Number(d.gross||0);
+    const vat = Number(d.vat||0);
+    const net = Number(d.net||Math.max(0, gross - vat));
+    const isIncome = d.type==="sales_invoice";
+    if(isIncome){
+      yRev += net; yVatOut += vat;
+    }else{
+      yCost += net; yVatIn += vat;
+    }
+  });
+  const yProfit = yRev - yCost;
+  const taxPct = Number(el("bkTaxPct").value||30);
+  const yTax = Math.max(0, yProfit) * (taxPct/100);
+  const yAfter = yProfit - yTax;
+  const yVatSaldo = yVatOut - yVatIn;
+
+  el("bkYearRev").textContent = eur(yRev);
+  el("bkYearCost").textContent = eur(yCost);
+  el("bkYearProfit").textContent = eur(yProfit);
+  el("bkYearTax").textContent = eur(yTax);
+  el("bkYearAfter").textContent = eur(yAfter);
+  el("bkYearVat").textContent = eur(yVatSaldo);
+
+  // ---------- KPI for CURRENT FILTER period (unified using docs + tx) ----------
+  const from = el("bkFrom").value || "";
+  const to   = el("bkTo").value || "";
+  const inRange = (dateStr)=>{
+    if(!dateStr) return false;
+    if(from && dateStr < from) return false;
+    if(to && dateStr > to) return false;
+    return true;
+  };
+
+  // For KPI use docs only (more accounting-correct)
+  let fRev=0, fCost=0;
+  docs.filter(d=>inRange(d.date)).forEach(d=>{
+    const net = Number(d.net||Math.max(0, Number(d.gross||0) - Number(d.vat||0)));
+    if(d.type==="sales_invoice") fRev += net;
+    else fCost += net;
+  });
+  const fProfit = fRev - fCost;
+  const margin = (fRev>0) ? (fProfit/fRev*100) : 0;
+
+  el("bkKpiRev").textContent = eur(fRev);
+  el("bkKpiCost").textContent = eur(fCost);
+  el("bkKpiProfit").textContent = eur(fProfit);
+  el("bkKpiMargin").textContent = (margin||0).toFixed(1) + "%";
+
+  // ---------- Unified list ----------
+  // active filters already loaded above (K.bkActiveFilters)
+  const bankFilter = (active.listBank || "all");
+  const typeFilter = (active.listType || "all");
+  const partyFilter = (active.listParty || "").trim().toLowerCase();
+  const queryFilter = (active.listQuery || "").trim().toLowerCase();
+
+  const bankName = (id)=>{
+    const b = banks.find(x=>x.id===id);
+    return b ? b.name : "";
+  };
+
+  const items = [];
+
+  // Docs -> amount signed by type (income +, expense -)
+  docs.forEach(d=>{
+    const amount = (d.type==="sales_invoice") ? Number(d.gross||0) : -Math.abs(Number(d.gross||0));
+    items.push({
+      kind:"doc",
+      id:d.id,
+      date:d.date,
+      bankId:d.bankId||"",
+      bank: bankName(d.bankId||""),
+      type: d.type==="sales_invoice" ? "income" : "expense",
+      rel: d.party||"",
+      desc: d.desc||"",
+      amount,
+      vat: (d.type==="sales_invoice") ? Number(d.vat||0) : -Math.abs(Number(d.vat||0)),
+      meta: d
+    });
+  });
+
+  // Tx
+  tx.forEach(t=>{
+    items.push({
+      kind:"tx",
+      id:t.id,
+      date:t.date,
+      bankId:t.bankId||"",
+      bank: bankName(t.bankId||""),
+      type: (Number(t.amount||0)>=0) ? "income" : "expense",
+      rel: t.cat||"",
+      desc: t.desc||"",
+      amount: Number(t.amount||0),
+      vat: 0,
+      meta: t
+    });
+  });
+
+  const filtered = items.filter(it=>{
+    if(!inRange(it.date)) return false;
+    if(bankFilter && bankFilter!=="all"){
+      if(it.bankId !== bankFilter) return false;
+    }
+    if(typeFilter==="docs" && it.kind!=="doc") return false;
+    if(typeFilter==="tx" && it.kind!=="tx") return false;
+    if(typeFilter==="income" && it.type!=="income") return false;
+    if(typeFilter==="expense" && it.type!=="expense") return false;
+
+    if(partyFilter){
+      const rel = (it.rel||"").toLowerCase();
+      const party = (it.kind==="doc" ? (it.meta.party||"").toLowerCase() : rel);
+      if(!rel.includes(partyFilter) && !party.includes(partyFilter)) return false;
+    }
+    if(queryFilter){
+      const hay = (it.desc||"").toLowerCase();
+      if(!hay.includes(queryFilter)) return false;
+    }
+    return true;
+  }).sort((a,b)=> (a.date===b.date ? (b.amount-a.amount) : (a.date<b.date ? 1 : -1)));
+
+  const body = el("bkUnifiedBody");
+  body.innerHTML = "";
+  filtered.forEach(it=>{
+    const signClass = it.amount < 0 ? "danger" : "good";
+    const tr=document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono">${esc(it.date||"")}</td>
+      <td>${esc(it.bank||"")}</td>
+      <td>${it.kind==="doc" ? "Boekstuk" : "Mutatie"} • ${it.type==="income" ? "In" : "Uit"}</td>
+      <td>${esc(it.rel||"")}</td>
+      <td>${esc(it.desc||"")}</td>
+      <td class="right mono">${eur(it.amount)}</td>
+      <td class="right mono">${eur(it.vat)}</td>
+      <td class="right"><button type="button" class="danger" data-bkdel="${it.kind}:${it.id}">Verwijder</button></td>
+    `;
+    body.appendChild(tr);
+  });
+
+  // delete handlers
+  body.querySelectorAll('button[data-bkdel]').forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const [kind,id] = btn.dataset.bkdel.split(":");
+      if(!confirm("Verwijderen?")) return;
+      if(kind==="doc"){
+        const nd = load(K.bkDocs, []).filter(x=>x.id!==id);
+        save(K.bkDocs, nd);
+      }else{
+        const nt = load(K.bkTx, []).filter(x=>x.id!==id);
+        save(K.bkTx, nt);
+      }
+      renderBookkeeping();
+    });
+  });
+}
+
+  // Boekhouding events (V15)
+  const bkSafeOn = (id, ev, fn)=>{
+    const n = document.getElementById(id);
+    if(n) n.addEventListener(ev, fn);
+  };
+
+  // Apply filters + store period
+  bkSafeOn("bkApply", "click", ()=>{
+    const from = document.getElementById("bkFrom")?.value || "";
+    const to   = document.getElementById("bkTo")?.value || "";
+    save(K.bkPeriod, { from, to });
+
+    const active = {
+      listBank: document.getElementById("bkListBank")?.value || "all",
+      listType: document.getElementById("bkListType")?.value || "all",
+      listParty: document.getElementById("bkListParty")?.value || "",
+      listQuery: document.getElementById("bkListQuery")?.value || ""
+    };
+    save(K.bkActiveFilters, active);
+
+    // VAT / jaar prefs apart
+    save(K.bkPrefs, {
+      vatYear: document.getElementById("bkVatYear")?.value || "",
+      vatQuarter: document.getElementById("bkVatQuarter")?.value || "1",
+      year: document.getElementById("bkYear")?.value || "",
+      taxPct: Number(document.getElementById("bkTaxPct")?.value || 30)
+    });
+
+    renderBookkeeping();
+
+    // Maak filtervelden leeg voor de volgende zoekactie (actieve filter blijft toegepast tot je opnieuw op Toepassen drukt)
+    const fParty = document.getElementById("bkListParty"); if(fParty) fParty.value = "";
+    const fQuery = document.getElementById("bkListQuery"); if(fQuery) fQuery.value = "";
+    const fBank  = document.getElementById("bkListBank");  if(fBank)  fBank.value = "all";
+    const fType  = document.getElementById("bkListType");  if(fType)  fType.value = "all";
+  });
+
+renderBookkeeping();
+
+  // Live refresh on change/input
+  ["bkVatYear","bkVatQuarter","bkYear","bkTaxPct"].forEach(id=>{
+    bkSafeOn(id,"change", renderBookkeeping);
+  });
+// Init
+  ensureDefaults();
+  // boekhouding defaults
+  if(el("bkDocDate")) el("bkDocDate").value = todayISO();
+  if(el("bkTxDate")) el("bkTxDate").value = todayISO();
+  const _p=bkLoadPeriod();
+  if(el("bkMonth")) el("bkMonth").value = _p.month || bkDefaultPeriod().month;
+  if(el("bkYear")) el("bkYear").value = String(_p.year||new Date().getFullYear());
+  el("todayPill").textContent = todayISO();
+  el("hDate").value = todayISO();
+  el("invDate").value = todayISO();
+  refreshInvoiceNumber();
+  renderRows();
+  renderClients();
+  renderSettings();
+  updateAutoHours();
+  buildInvoicePreview();
+  renderBookkeeping();
+});
 </script>
 </body>
 </html>
