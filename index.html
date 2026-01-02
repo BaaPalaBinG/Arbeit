@@ -532,7 +532,7 @@
         </div>
 
         <div class="btnbar">
-          <button type="button" class="primary" id="btnBuildInvoice">🧮 Opbouwen</button>
+          <button type="button" class="primary" id="btnBuildInvoice">📄 PDF</button>
           <button type="button" class="good" id="btnPrint">🖨️ Print</button>
         </div>
       </div>
@@ -958,6 +958,68 @@
       </div>
 
       
+      <div class="card">
+        <h2><span>Banktransactie</span><span class="pill">Cashflow</span></h2>
+
+        <div class="row">
+          <div class="field">
+            <label>Datum</label>
+            <input id="bkTxDate" type="date">
+          </div>
+          <div class="field">
+            <label>Type</label>
+            <select id="bkTxKind">
+              <option value="out">Uitgave (−)</option>
+              <option value="in">Inkomst (+)</option>
+              <option value="transfer">Overboeking</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Van bank</label>
+            <select id="bkTxBankFrom"></select>
+          </div>
+          <div class="field" id="bkTxBankToWrap" style="display:none">
+            <label>Naar bank</label>
+            <select id="bkTxBankTo"></select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Bedrag</label>
+            <input id="bkTxAmount" type="number" step="0.01" value="0">
+          </div>
+          <div class="field">
+            <label>Categorie</label>
+            <select id="bkTxCat">
+              <option value="">(optioneel)</option>
+              <option value="Belastingdienst">Belastingdienst</option>
+              <option value="Rente">Rente</option>
+              <option value="Bankkosten">Bankkosten</option>
+              <option value="Privé">Privé</option>
+              <option value="Overig">Overig</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Omschrijving</label>
+          <input id="bkTxDesc" type="text" placeholder="Bijv: rente / overboeking / betaling BD">
+        </div>
+
+        <div class="btnbar">
+          <button type="button" class="primary" id="bkAddTx">➕ Transactie</button>
+          <button type="button" id="bkClearTx">Leeg</button>
+        </div>
+
+        <div class="muted small" style="margin-top:8px">
+          Banktransacties veranderen alleen je banksaldo (cashflow) en tellen niet mee voor BTW/winst.
+        </div>
+      </div>
+
 
     </div>
   </div>
@@ -1807,10 +1869,46 @@ if(tab==="screen-settings") renderSettings();
     renderClients();
   });
 
-  // Invoice actions
-  el("btnBuildInvoice").addEventListener("click", ()=>{
+
+  function openInvoicePdfWindow(){
     refreshInvoiceNumber();
     buildInvoicePreview();
+
+    const invHtml = (el("invoicePreview")?.innerHTML || "").trim();
+    if(!invHtml){
+      alert("Geen factuur om te exporteren.");
+      return;
+    }
+
+    const title = "Factuur";
+    const w = window.open("", "_blank");
+    if(!w){ alert("Popup geblokkeerd. Sta popups toe om PDF te maken."); return; }
+
+    const css = `
+      <style>
+        @page { size: A4; margin: 12mm; }
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#111; }
+        .no-print{ display:none !important; }
+        /* invoice block should already be compact; ensure full width */
+        #wrap{ max-width: 820px; margin: 0 auto; }
+        table{ width:100%; border-collapse:collapse; }
+      </style>
+    `;
+
+    w.document.open();
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>${css}</head><body><div id="wrap">${invHtml}</div></body></html>`);
+    w.document.close();
+
+    // give the browser a tick, then open print dialog (user can 'Save as PDF')
+    setTimeout(()=>{
+      w.focus();
+      w.print();
+    }, 300);
+  }
+
+  // Invoice actions
+  el("btnBuildInvoice").addEventListener("click", ()=>{
+    openInvoicePdfWindow();
   });
 
   el("btnPrint").addEventListener("click", ()=>{
@@ -2355,6 +2453,8 @@ el("importFile").addEventListener("change", async (e)=>{
   };
 
   fillBankSelect("bkDocBank", false);
+  fillBankSelect("bkTxBankFrom", false);
+  fillBankSelect("bkTxBankTo", true);
   fillBankSelect("bkTxBank", false);
     try{ bindAutoUI(); }catch(e){}
 fillBankSelect("bkListBank", true);
@@ -2700,13 +2800,13 @@ function rebuildBankTxFromDocs(){
     };
     save(K.bkActiveFilters, active);
 
-    // VAT / jaar prefs apart
-    save(K.bkPrefs, {
-      vatYear: document.getElementById("bkVatYear")?.value || "",
-      vatQuarter: document.getElementById("bkVatQuarter")?.value || "1",
-      year: document.getElementById("bkYear")?.value || "",
-      taxPct: Number(document.getElementById("bkTaxPct")?.value || 30)
-    });
+    // VAT / jaar prefs (merge zodat andere prefs zoals "showMutationsInList" behouden blijven)
+    const _prefs = load(K.bkPrefs, {});
+    _prefs.vatYear = document.getElementById("bkVatYear")?.value || "";
+    _prefs.vatQuarter = document.getElementById("bkVatQuarter")?.value || "1";
+    _prefs.year = document.getElementById("bkYear")?.value || "";
+    _prefs.taxPct = Number(document.getElementById("bkTaxPct")?.value || 30);
+    save(K.bkPrefs, _prefs);
 
     renderBookkeeping();
 
@@ -2822,33 +2922,99 @@ renderBookkeeping();
       });
     }
 
-    // Mutatie toevoegen
+    // Banktransactie toevoegen (cashflow-only)
     const addTxBtn = byId("bkAddTx");
+    const clearTxBtn = byId("bkClearTx");
+    const kindSel = byId("bkTxKind");
+    const toWrap = byId("bkTxBankToWrap");
+
+    const refreshTxUi = ()=>{
+      const k = kindSel?.value || "out";
+      if(toWrap) toWrap.style.display = (k==="transfer") ? "" : "none";
+    };
+    if(kindSel){ kindSel.addEventListener("change", refreshTxUi); }
+    refreshTxUi();
+    try{ if(byId("bkTxDate") && !byId("bkTxDate").value) byId("bkTxDate").value = todayISO(); }catch(e){}
+
+    if(clearTxBtn){
+      clearTxBtn.addEventListener("click", ()=>{
+        byId("bkTxDate").value = todayISO();
+        byId("bkTxKind").value = "out";
+        byId("bkTxAmount").value = "0";
+        byId("bkTxDesc").value = "";
+        byId("bkTxCat").value = "";
+        byId("bkTxBankFrom").selectedIndex = 0;
+        byId("bkTxBankTo").selectedIndex = 0;
+        refreshTxUi();
+      });
+    }
+
     if(addTxBtn){
       addTxBtn.addEventListener("click", ()=>{
         const date = byId("bkTxDate")?.value || todayISO();
-        const bankId = byId("bkTxBank")?.value || "";
-        const kind = byId("bkTxType")?.value || "in";
-        const desc = byId("bkTxDesc")?.value || "";
-        const cat  = byId("bkTxCat")?.value || "";
+        const kind = byId("bkTxKind")?.value || "out";
+        const bankFrom = byId("bkTxBankFrom")?.value || "";
+        const bankTo = byId("bkTxBankTo")?.value || "";
+        const desc = (byId("bkTxDesc")?.value || "").trim();
+        const cat  = (byId("bkTxCat")?.value || "").trim();
         const rawAmt = parseFloat(byId("bkTxAmount")?.value || 0);
 
-        if(!bankId){ alert("Kies een bank"); return; }
+        if(!bankFrom){ alert("Kies een bank"); return; }
         if(!rawAmt){ alert("Vul een bedrag in"); return; }
 
-        const amount = (kind==="out") ? -Math.abs(rawAmt) : Math.abs(rawAmt);
+        const txs = load(K.bkTx, []);
+        const baseId = "tx_"+Date.now()+"_"+Math.random().toString(16).slice(2);
 
-        const tx = load(K.bkTx, []);
-        tx.push({ id:String(Date.now()), date, bankId, type:kind, desc, cat, amount });
-        save(K.bkTx, tx);
+        if(kind==="transfer"){
+          if(!bankTo){ alert("Kies een naar-bank"); return; }
+          if(bankTo===bankFrom){ alert("Van- en naar-bank mogen niet hetzelfde zijn"); return; }
 
-        byId("bkTxDesc").value="";
-        byId("bkTxCat").value="";
-        byId("bkTxAmount").value="0";
+          const amt = Math.abs(rawAmt);
+          // uit van bankFrom
+          txs.push({
+            id: baseId+"_out",
+            date,
+            bankId: bankFrom,
+            type: "out",
+            cat: cat || "Overboeking",
+            desc: desc || "Overboeking",
+            amount: -amt,
+            source: "manual"
+          });
+          // in naar bankTo
+          txs.push({
+            id: baseId+"_in",
+            date,
+            bankId: bankTo,
+            type: "in",
+            cat: cat || "Overboeking",
+            desc: desc || "Overboeking",
+            amount: amt,
+            source: "manual"
+          });
+        }else{
+          const amt = (kind==="out") ? -Math.abs(rawAmt) : Math.abs(rawAmt);
+          txs.push({
+            id: baseId,
+            date,
+            bankId: bankFrom,
+            type: kind,
+            cat,
+            desc,
+            amount: amt,
+            source: "manual"
+          });
+        }
+
+        save(K.bkTx, txs);
+
+        // reset for next
+        if(clearTxBtn) clearTxBtn.click();
 
         try{ renderBookkeeping(); }catch(e){}
       });
     }
+
   };
 
   // Bind after initial renders so the elements exist
