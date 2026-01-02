@@ -258,6 +258,24 @@
       touch-action: manipulation;
     }
 
+
+    /* ===============================
+       HEADER COMPACT (V23)
+    =============================== */
+    header .wrap{padding-top:6px;padding-bottom:6px;}
+    .topbar{padding:6px 0 !important;}
+    nav{gap:6px !important;}
+    .tabbtn{padding:7px 10px !important;font-size:13px;}
+    .brand b{font-size:14px;}
+    .brand span{font-size:11px;}
+    @media(max-width:700px){
+      .tabbtn{padding:6px 9px !important;font-size:12px;}
+    }
+
+
+  .picklist{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(0,0,0,.15)}
+  .pick{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(255,255,255,.03)}
+  .pick input{margin:0}
 </style>
 </head>
 <body>
@@ -480,6 +498,27 @@
             <input id="invDueDays" type="number" min="0" step="1" value="30">
           </div>
         </div>
+        <div class="row" style="margin-top:10px">
+          <div class="field">
+            <label>Periode van</label>
+            <input id="invFrom" type="date">
+          </div>
+          <div class="field">
+            <label>Periode tot</label>
+            <input id="invTo" type="date">
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:10px">
+          <label>Klanten op factuur</label>
+          <div id="invClientsPick" class="picklist"></div>
+          <div class="btnbar" style="margin-top:8px">
+            <button type="button" id="btnInvAll">Alles</button>
+            <button type="button" class="danger" id="btnInvNone">Geen</button>
+            <button type="button" id="btnInvUseOverview">Gebruik filter uit Overzicht</button>
+          </div>
+        </div>
+
 
         <div class="row">
           <div class="field">
@@ -503,13 +542,14 @@
         <div class="row">
           <div class="field">
             <label>Volgende</label>
-            <input id="invNumber" type="text" class="mono" readonly>
+            <input id="invNumber" type="text" class="mono">
           </div>
         </div>
 
         <div class="btnbar">
           <button type="button" id="btnAdvanceNumber">✅ Vastleggen</button>
           <button type="button" class="danger" id="btnResetNumber">↺ Reset</button>
+          <button type="button" id="btnSetNumber">✍️ Handmatig opslaan</button>
         </div>
 
         <div class="small muted" style="margin-top:10px">
@@ -568,8 +608,60 @@
         <button type="button" id="btnImport">⬆️ Import</button>
       </div>
       <input id="importFile" type="file" accept="application/json" style="display:none">
+    
+      <div class="row" style="margin-top:12px">
+        <div class="field" style="display:flex;gap:10px;align-items:center">
+          <input type="checkbox" id="stToggleShowMutations" style="width:18px;height:18px">
+          <label for="stToggleShowMutations" style="margin:0">Toon bankmutaties in lijst (Boekhouding)</label>
+        </div>
+        <div class="muted small" style="margin-top:6px">Standaard staan bankmutaties uit (netter). Zet aan als je ze wilt controleren.</div>
+      </div>
+</div>
+  
+  <div class="grid" style="margin-top:14px">
+    <div class="card">
+      <h2><span>Banken beheren</span><span class="pill">Aanpassen / verwijderen</span></h2>
+      <div class="muted" style="margin-bottom:10px">Wijzig naam of startsaldo. Verwijderen kan altijd (mutaties/boekstukken blijven bestaan, maar tonen banknaam leeg als de bank is verwijderd).</div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Bank</th>
+              <th class="right">Startsaldo</th>
+              <th class="right">Actie</th>
+            </tr>
+          </thead>
+          <tbody id="stBanksBody"></tbody>
+        </table>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <div class="field">
+          <label>Nieuwe bank</label>
+          <input id="stAddBankName" placeholder="Bijv: Rabobank Zakelijk">
+        </div>
+        <div class="field">
+          <label>Startsaldo</label>
+          <input id="stAddBankStart" type="number" step="0.01" value="0">
+        </div>
+        <div class="field" style="display:flex;align-items:end">
+          <button type="button" class="primary" id="stAddBankBtn">＋ Bank toevoegen</button>
+        </div>
+      </div>
+      <div class="muted small" style="margin-top:6px">Tip: startsaldo is je beginsaldo per 1e dag dat je in deze app gaat boeken.</div>
+
+
+      <div class="muted small" style="margin-top:10px">Wijzigingen worden direct opgeslagen.</div>
     </div>
-  </section>
+
+    <div class="card">
+      <h2><span>Tip</span><span class="pill">Export</span></h2>
+      <div class="muted">Gebruik Export/Import om je volledige backup te maken of terug te zetten.</div>
+    </div>
+  </div>
+
+</section>
 
 
   <!-- BOOKKEEPING -->
@@ -778,6 +870,7 @@
             </thead>
             <tbody id="bkUnifiedBody"></tbody>
           </table>
+      <div id="bkUnifiedTotals" style="margin-top:10px"></div>
         </div>
 
         <div class="muted small" style="margin-top:8px">
@@ -838,71 +931,34 @@
           </div>
         </div>
 
-        <div class="btnbar">
+        
+        <div class="row" id="bkDocAutoRow" style="margin-top:10px">
+          <div class="field" style="display:flex;align-items:center;gap:10px">
+            <input id="bkDocAuto" type="checkbox" style="transform:scale(1.1);margin:0">
+            <label for="bkDocAuto" style="margin:0">Automatisch</label>
+            <span class="muted">wek / maand</span>
+          </div>
+          <div class="field" id="bkDocAutoOpts" style="display:none">
+            <label>Frequentie</label>
+            <select id="bkDocFreq">
+              <option value="weekly">Wekelijks</option>
+              <option value="monthly" selected>Maandelijks</option>
+            </select>
+          </div>
+          <div class="field" id="bkDocAutoNext" style="display:none">
+            <label>Startdatum</label>
+            <input id="bkDocNext" type="date">
+          </div>
+        </div>
+
+<div class="btnbar">
           <button type="button" class="primary" id="bkAddDoc">➕ Boekstuk</button>
           <button type="button" id="bkClearDoc">Leeg</button>
         </div>
       </div>
 
-      <div class="card" style="margin-top:12px">
-        <h2><span>Banken</span><span class="pill">Beheer</span></h2>
+      
 
-        <div class="field">
-          <label>Banknaam</label>
-          <input id="bkBankName" type="text" placeholder="Bijv: ING Zakelijk">
-        </div>
-
-        <div class="field">
-          <label>Startsaldo</label>
-          <input id="bkBankStart" type="number" step="0.01" value="0">
-        </div>
-
-        <div class="btnbar">
-          <button type="button" class="primary" id="bkAddBank">➕ Bank</button>
-        </div>
-
-        <hr style="border:0;border-top:1px solid rgba(32,49,74,.6);margin:12px 0">
-
-        <h2 style="margin-top:0"><span>Bankmutatie</span><span class="pill">In/Uit</span></h2>
-
-        <div class="field">
-          <label>Datum</label>
-          <input id="bkTxDate" type="date">
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label>Bank</label>
-            <select id="bkTxBank"></select>
-          </div>
-          <div class="field">
-            <label>Type</label>
-            <select id="bkTxType">
-              <option value="in">In</option>
-              <option value="out">Uit</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Omschrijving</label>
-          <input id="bkTxDesc" type="text" placeholder="Bijv: betaling / pin">
-        </div>
-
-        <div class="field">
-          <label>Relatie / categorie</label>
-          <input id="bkTxCat" type="text" placeholder="Bijv: JEPO / brandstof / kosten">
-        </div>
-
-        <div class="field">
-          <label>Bedrag</label>
-          <input id="bkTxAmount" type="number" step="0.01" value="0">
-        </div>
-
-        <div class="btnbar">
-          <button type="button" class="primary" id="bkAddTx">➕ Mutatie</button>
-        </div>
-      </div>
     </div>
   </div>
 </section>
@@ -929,7 +985,11 @@ document.addEventListener("DOMContentLoaded", () => {
     bkTx: "hli_bk_tx_v1",
     bkPeriod: "hli_bk_period_v1",
     bkActiveFilters: "hli_bk_active_filters_v1",
-    bkPrefs: "hli_bk_prefs_v1"
+    bkPrefs: "hli_bk_prefs_v1",
+    bkRecurring: "hli_bk_recurring_v1",
+    invFrom: "hli_inv_from_v1",
+    invTo: "hli_inv_to_v1",
+    invClientIds: "hli_inv_client_ids_v1"
   };
 
   const load = (key, fallback) => {
@@ -940,7 +1000,150 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   const save = (key, obj) => localStorage.setItem(key, JSON.stringify(obj));
 
-  const todayISO = () => {
+  
+
+  
+
+  // ---- expose core helpers for Settings (Banken beheren) ----
+  window.__HLI = window.__HLI || {};
+  window.__HLI.load = load;
+  window.__HLI.save = save;
+  window.__HLI.getK = () => K;
+
+  // ===============================
+  // Recurring (minimal) (V27.1)
+  // ===============================
+  const addDaysISO = (iso, days)=>{
+    const d = new Date(iso+"T00:00:00");
+    d.setDate(d.getDate()+days);
+    return d.toISOString().slice(0,10);
+  };
+  const addMonthsISO = (iso, months)=>{
+    const d = new Date(iso+"T00:00:00");
+    const day = d.getDate();
+    d.setMonth(d.getMonth()+months);
+    if(d.getDate() !== day) d.setDate(0);
+    return d.toISOString().slice(0,10);
+  };
+
+  function applyRecurring(){
+    const rec = load(K.bkRecurring, []);
+    if(!rec || !rec.length) return;
+    const today = todayISO();
+    let docs = load(K.bkDocs, []);
+    let txs  = load(K.bkTx, []);
+    let changed = false;
+
+    rec.forEach(r=>{
+      let next = r.nextDate;
+      while(next && next <= today){
+        if(r.kind==="tx"){
+          txs.push({
+            id: "tx_"+Date.now()+"_"+Math.random().toString(16).slice(2),
+            date: next,
+            bankId: r.bankId||"",
+            type: r.type||"out",
+            desc: r.desc||"",
+            cat: r.cat||"",
+            amount: (r.type==="out") ? -Math.abs(Number(r.amount||0)) : Math.abs(Number(r.amount||0))
+          });
+        }else{
+          const gross = Number(r.gross||0);
+          const vatPct = Number(r.vatPct||21);
+          const vat = +(gross * (vatPct/100)).toFixed(2);
+          const net = +(gross - vat).toFixed(2);
+          docs.push({
+            id: "doc_"+Date.now()+"_"+Math.random().toString(16).slice(2),
+            type: r.docType||"receipt",
+            date: next,
+            party: r.party||"",
+            desc: r.desc||"",
+            gross,
+            vat,
+            net,
+            bankId: r.bankId||""
+          });
+        }
+        changed = true;
+        next = (r.freq==="weekly") ? addDaysISO(next,7) : addMonthsISO(next,1);
+      }
+      r.nextDate = next;
+    });
+
+    if(changed){
+      save(K.bkDocs, docs);
+      
+      try{
+        if(el("bkDocAuto") && el("bkDocAuto").checked){
+          const rec = load(K.bkRecurring, []);
+          rec.push({
+            id: "rc_"+Date.now(),
+            kind: "doc",
+            freq: (el("bkDocFreq")&&el("bkDocFreq").value) || "monthly",
+            nextDate: (el("bkDocNext")&&el("bkDocNext").value) || todayISO(),
+            bankId: bankId||"",
+            docType: type||"receipt",
+            party: party||"",
+            desc: desc||"",
+            gross: gross,
+            vatPct: vatPct
+          });
+          save(K.bkRecurring, rec);
+          el("bkDocAuto").checked = false;
+          bindAutoUI();
+        }
+      }catch(e){}
+save(K.bkTx, txs);
+      
+      try{
+        if(el("bkTxAuto") && el("bkTxAuto").checked){
+          const rec = load(K.bkRecurring, []);
+          rec.push({
+            id: "rc_"+Date.now(),
+            kind: "tx",
+            freq: (el("bkTxFreq")&&el("bkTxFreq").value) || "monthly",
+            nextDate: (el("bkTxNext")&&el("bkTxNext").value) || todayISO(),
+            bankId: bankId||"",
+            type: type||"out",
+            cat: cat||"",
+            desc: desc||"",
+            amount: Math.abs(amount)
+          });
+          save(K.bkRecurring, rec);
+          el("bkTxAuto").checked = false;
+          bindAutoUI();
+        }
+      }catch(e){}
+save(K.bkRecurring, rec);
+    }
+  }
+
+  function bindAutoUI(){
+    if(el("bkDocNext") && !el("bkDocNext").value) el("bkDocNext").value = todayISO();
+    if(el("bkTxNext") && !el("bkTxNext").value) el("bkTxNext").value = todayISO();
+
+    const toggle = (chkId, optsId, nextId)=>{
+      const chk = el(chkId);
+      const opts = el(optsId);
+      const next = el(nextId);
+      if(!chk || !opts || !next) return;
+      const apply = ()=>{
+        const on = chk.checked;
+        opts.style.display = on ? "" : "none";
+        next.style.display = on ? "" : "none";
+      };
+      chk.addEventListener("change", apply);
+      apply();
+    };
+    toggle("bkDocAuto","bkDocAutoOpts","bkDocAutoNext");
+    toggle("bkTxAuto","bkTxAutoOpts","bkTxAutoNext");
+  }
+// ---- expose core storage helpers for settings (bank beheer) ----
+  window.__HLI = window.__HLI || {};
+  window.__HLI.K = K;
+  window.__HLI.load = load;
+  window.__HLI.save = save;
+const todayISO = () => {
     const d = new Date();
     return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   };
@@ -1009,9 +1212,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if(tab==="screen-hours") renderRows();
       if(tab==="screen-rates") renderClients();
-      if(tab==="screen-invoice"){ refreshInvoiceNumber(); buildInvoicePreview(); }
+      if(tab==="screen-invoice"){ refreshInvoiceNumber(); try{ bindInvoiceFilterUI(); }catch(e){} buildInvoicePreview(); }
       if(tab==="screen-books") renderBookkeeping();
-      if(tab==="screen-settings") renderSettings();
+      
+  try{ renderSettingsBanks(); try{ bindSettingsBanks(); }catch(e){} }catch(e){}
+try{ renderSettingsBanks(); }catch(e){}
+if(tab==="screen-settings") renderSettings();
     });
   });
 
@@ -1202,12 +1408,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   function refreshInvoiceNumber(){
     const invDate = el("invDate").value || todayISO();
+    if(document.activeElement === el("invNumber")) return;
     el("invNumber").value = String(computeNextInvoiceNumber(invDate));
   }
 
   // Invoice preview
   function buildInvoiceData(){
-    const rows = filteredRows();
+    const rows = invoiceFilteredRows();
     const clients = load(K.clients, []);
     const invDate = el("invDate").value || todayISO();
     const dueDays = Number(el("invDueDays").value||30);
@@ -1665,6 +1872,86 @@ document.addEventListener("DOMContentLoaded", () => {
           invNumber: invNo
         });
         save(K.bkDocs, docs);
+
+        // auto bankmutatie vanuit boekstuk (voor banksaldo)
+        try{
+          const txs = load(K.bkTx, []);
+          const kind = (type==="sales_invoice") ? "in" : "out";
+          const amount = (kind==="out") ? -Math.abs(Number(gross||0)) : Math.abs(Number(gross||0));
+          txs.push({
+            id: "tx_"+Date.now()+"_"+Math.random().toString(16).slice(2),
+            date,
+            bankId,
+            type: kind,
+            cat: party,
+            desc: (desc || (type==="sales_invoice" ? "Ontvangst verkoopfactuur" : "Betaling boekstuk")),
+            amount,
+            source: "doc",
+            docId: docId
+          });
+          save(K.bkTx, txs);
+        }catch(e){
+          console.warn("auto bank tx failed", e);
+        }
+// auto bankmutatie (afgeleid van boekstuk) zodat banksaldo/Mutaties mee lopen
+        try{
+          const txs = load(K.bkTx, []);
+          const kind = (type==="sales_invoice") ? "in" : "out";
+          const amount = (kind==="out") ? -Math.abs(gross) : Math.abs(gross);
+          txs.push({
+            id: uid(),
+            date,
+            bankId,
+            type: kind,
+            cat: party,
+            desc: (desc || (type==="sales_invoice" ? "Ontvangst verkoopfactuur" : "Betaling boekstuk")),
+            amount,
+            source: "doc",
+            docId: docId
+          });
+          save(K.bkTx, txs);
+        }catch(e){
+          console.warn("auto tx failed", e);
+        }
+
+        // auto bankmutatie (op basis van boekstuk)
+        try{
+          const txs = load(K.bkTx, []);
+          const kind = (type==="sales_invoice") ? "in" : "out";
+          const amount = (kind==="out") ? -Math.abs(gross) : Math.abs(gross);
+          txs.push({
+            id: uid(),
+            date,
+            bankId,
+            type: kind,
+            cat: party,
+            desc: (desc || (type==="sales_invoice" ? `Ontvangst factuur` : `Betaling`)),
+            amount,
+            source: "doc",
+            docId
+          });
+          save(K.bkTx, txs);
+        }catch(e){ console.warn(e); }
+
+        // auto bankmutatie (op basis van boekstuk)
+        try{
+          const txs = load(K.bkTx, []);
+          const kind = (type==="sales_invoice") ? "in" : "out";
+          const amount = (kind==="out") ? -Math.abs(gross) : Math.abs(gross);
+          txs.push({
+            id: String(Date.now()) + "_" + Math.random().toString(16).slice(2),
+            date,
+            bankId,
+            type: kind,
+            cat: party,
+            desc: (desc || (type==="sales_invoice" ? "Ontvangst verkoopfactuur" : "Betaling boekstuk")),
+            amount,
+            source: "doc",
+            docId: docId
+          });
+          save(K.bkTx, txs);
+        }catch(e){}
+        try{ renderBookkeeping(); }catch(e){}
         // refresh bookkeeping if user is there
         const activeBooks = document.getElementById("screen-books")?.classList.contains("active");
         if(activeBooks) renderBookkeeping();
@@ -1682,6 +1969,28 @@ document.addEventListener("DOMContentLoaded", () => {
       refreshInvoiceNumber();
     }
   });
+
+  // Manual override invoice number (kept in invoiceLog)
+  el("btnSetNumber").addEventListener("click", ()=>{
+    const raw = (el("invNumber").value||"").trim();
+    const n = parseInt(raw, 10);
+    if(!isFinite(n) || n<=0){
+      alert("Vul een geldig factuurnummer in.");
+      return;
+    }
+    const dateISO = el("invDate").value || todayISO();
+    const mKey = sameMonthKey(toDate(dateISO));
+    const log = load(K.invoiceLog, { base:20260001, lastIssuedMonth:null, lastNumber:20260000 });
+
+    // ensure base not above chosen number
+    if(!log.base || n < log.base) log.base = n;
+    log.lastNumber = n;
+    log.lastIssuedMonth = mKey; // mark as used for this month
+    save(K.invoiceLog, log);
+    refreshInvoiceNumber();
+    alert("Factuurnummer opgeslagen.");
+  });
+
 
   // Settings save
   el("btnSaveSettings").addEventListener("click", ()=>{
@@ -1980,6 +2289,8 @@ el("importFile").addEventListener("change", async (e)=>{
   }
 
   function renderBookkeeping(){
+  try{ applyRecurring(); }catch(e){}
+
   const banks = load(K.bkBanks, []);
   const docs  = load(K.bkDocs, []);
   const tx    = load(K.bkTx, []);
@@ -1993,6 +2304,24 @@ el("importFile").addEventListener("change", async (e)=>{
   const prefs = load(K.bkPrefs, {});
   if(prefs.vatYear) el("bkVatYear").value = prefs.vatYear;
   if(prefs.vatQuarter) el("bkVatQuarter").value = String(prefs.vatQuarter);
+
+  // bind VAT selectors (once) so kwartalen kunnen wisselen
+  if(!window.__HLI) window.__HLI = {};
+  if(!window.__HLI.bkVatBound){
+    window.__HLI.bkVatBound = true;
+    el("bkVatYear").addEventListener("change", ()=>{
+      const p = load(K.bkPrefs, {});
+      p.vatYear = Number(el("bkVatYear").value||new Date().getFullYear());
+      save(K.bkPrefs, p);
+      renderBookkeeping();
+    });
+    el("bkVatQuarter").addEventListener("change", ()=>{
+      const p = load(K.bkPrefs, {});
+      p.vatQuarter = Number(el("bkVatQuarter").value||1);
+      save(K.bkPrefs, p);
+      renderBookkeeping();
+    });
+  }
   if(prefs.year) el("bkYear").value = prefs.year;
   if(prefs.taxPct!=null) el("bkTaxPct").value = String(prefs.taxPct);
   // show currently applied list filters in UI
@@ -2027,13 +2356,14 @@ el("importFile").addEventListener("change", async (e)=>{
 
   fillBankSelect("bkDocBank", false);
   fillBankSelect("bkTxBank", false);
-  fillBankSelect("bkListBank", true);
+    try{ bindAutoUI(); }catch(e){}
+fillBankSelect("bkListBank", true);
 
   el("bkBanksCount").textContent = String(banks.length);
 
   // set dates default
-  if(!el("bkDocDate").value) el("bkDocDate").value = todayISO();
-  if(!el("bkTxDate").value) el("bkTxDate").value = todayISO();
+  if(el("bkDocDate") && !el("bkDocDate").value) el("bkDocDate").value = todayISO();
+  if(el("bkTxDate") && !el("bkTxDate").value) el("bkTxDate").value = todayISO();
 
   // VAT / Year selects
   const now = new Date();
@@ -2208,6 +2538,7 @@ el("importFile").addEventListener("change", async (e)=>{
 
   // Tx
   tx.forEach(t=>{
+    if(!prefs.showMutationsInList) return;
     items.push({
       kind:"tx",
       id:t.id,
@@ -2262,6 +2593,27 @@ el("importFile").addEventListener("change", async (e)=>{
     `;
     body.appendChild(tr);
   });
+  // totals (filtered view)
+  try{
+    const totalCount = filtered.length;
+    let totalAmount = 0;
+    let totalVat = 0;
+    filtered.forEach(it=>{
+      totalAmount += Number(it.amount||0);
+      totalVat += Number(it.vat||0);
+    });
+    const tEl = el("bkUnifiedTotals");
+    if(tEl){
+      tEl.innerHTML = `
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <span class="pill">Aantal: <b>${totalCount}</b></span>
+          <span class="pill">Totaal bedrag: <b>${eur(totalAmount)}</b></span>
+          <span class="pill">Totaal BTW: <b>${eur(totalVat)}</b></span>
+        </div>
+      `;
+    }
+  }catch(e){}
+
 
   // delete handlers
   body.querySelectorAll('button[data-bkdel]').forEach(btn=>{
@@ -2279,6 +2631,54 @@ el("importFile").addEventListener("change", async (e)=>{
     });
   });
 }
+
+function rebuildBankTxFromDocs(){
+  const docs = load(K.bkDocs, []);
+  const existing = load(K.bkTx, []);
+  const out = [];
+  const seen = new Set();
+
+  // keep non-doc tx (if any) so user doesn't lose manual entries
+  existing.forEach(t=>{
+    if(!t || t.source==="doc") return;
+    out.push(t);
+    seen.add("keep:"+String(t.id||""));
+  });
+
+  docs.forEach(d=>{
+    if(!d) return;
+    const bankId = d.bankId || "";
+    if(!bankId) return; // cannot attribute
+    const type = d.type || "";
+    const date = d.date || todayISO();
+    const gross = Number(d.gross||0);
+
+    // Determine in/out
+    const kind = (type==="sales_invoice") ? "in" : "out";
+    const amount = (kind==="out") ? -Math.abs(gross) : Math.abs(gross);
+
+    // stable key to prevent duplicates
+    const key = ["doc", d.id, bankId, kind, gross, date].join("|");
+    if(seen.has(key)) return;
+    seen.add(key);
+
+    out.push({
+      id: "tx_doc_"+String(d.id),
+      date,
+      bankId,
+      type: kind,
+      cat: d.party || "",
+      desc: d.desc || (type==="sales_invoice" ? "Ontvangst verkoopfactuur" : "Betaling boekstuk"),
+      amount,
+      source: "doc",
+      docId: d.id
+    });
+  });
+
+  save(K.bkTx, out);
+}
+
+
 
   // Boekhouding events (V15)
   const bkSafeOn = (id, ev, fn)=>{
@@ -2341,7 +2741,382 @@ renderBookkeeping();
   updateAutoHours();
   buildInvoicePreview();
   renderBookkeeping();
+
+
+  /* ===============================
+     BOOKKEEPING BUTTONS (V25)
+     Fix: bind handlers inside DOMContentLoaded scope
+  =============================== */
+  const bindBookButtons = ()=>{
+    const byId = (id)=> document.getElementById(id);
+
+    // Bank toevoegen
+    const addBankBtn = byId("bkAddBank");
+    if(addBankBtn){
+      addBankBtn.addEventListener("click", ()=>{
+        const name = (byId("bkBankName")?.value || "").trim();
+        const start = parseFloat(byId("bkBankStart")?.value || 0);
+        if(!name){ alert("Vul een banknaam in"); return; }
+
+        const banks = load(K.bkBanks, []);
+        banks.push({ id: String(Date.now()), name, start: Number(start||0) });
+        save(K.bkBanks, banks);
+
+        byId("bkBankName").value = "";
+        byId("bkBankStart").value = "0";
+
+        try{ renderBookkeeping(); }catch(e){}
+        try{ renderSettingsBanks(); }catch(e){}
+      });
+    }
+
+    // Boekstuk toevoegen
+    const addDocBtn = byId("bkAddDoc");
+    if(addDocBtn){
+      addDocBtn.addEventListener("click", ()=>{
+        const type = byId("bkDocType")?.value || "receipt";
+        const date = byId("bkDocDate")?.value || todayISO();
+        const party = byId("bkDocParty")?.value || "";
+        const desc  = byId("bkDocDesc")?.value || "";
+        const gross = parseFloat(byId("bkDocGross")?.value || 0);
+        const vatPct = parseFloat(byId("bkDocVatPct")?.value || 21);
+        const bankId = byId("bkDocBank")?.value || "";
+
+        if(!gross){ alert("Vul een bedrag incl. BTW in"); return; }
+        if(!bankId){ alert("Kies een bank"); return; }
+
+        const vat = +(gross * (vatPct/100)).toFixed(2);
+        const net = +(gross - vat).toFixed(2);
+
+        const docs = load(K.bkDocs, []);
+        const docId = String(Date.now());
+        docs.push({ id:docId, type, date, party, desc, gross, vat, net, bankId });
+        save(K.bkDocs, docs);
+
+        // auto bankmutatie vanuit boekstuk (banksaldo)
+        try{
+          const txs = load(K.bkTx, []);
+          const kind = (type==="sales_invoice") ? "in" : "out";
+          const amount = (kind==="out") ? -Math.abs(Number(gross||0)) : Math.abs(Number(gross||0));
+          txs.push({
+            id: "tx_doc_"+docId,
+            date,
+            bankId,
+            type: kind,
+            desc: (desc || (type==="sales_invoice" ? "Ontvangst verkoopfactuur" : "Betaling boekstuk")),
+            cat: party,
+            amount,
+            source: "doc",
+            docId
+          });
+          save(K.bkTx, txs);
+        }catch(e){
+          console.warn("auto bank tx failed", e);
+        }
+
+        byId("bkDocParty").value="";
+        byId("bkDocDesc").value="";
+        byId("bkDocGross").value="0";
+
+        try{ renderBookkeeping(); }catch(e){}
+      });
+    }
+
+    // Mutatie toevoegen
+    const addTxBtn = byId("bkAddTx");
+    if(addTxBtn){
+      addTxBtn.addEventListener("click", ()=>{
+        const date = byId("bkTxDate")?.value || todayISO();
+        const bankId = byId("bkTxBank")?.value || "";
+        const kind = byId("bkTxType")?.value || "in";
+        const desc = byId("bkTxDesc")?.value || "";
+        const cat  = byId("bkTxCat")?.value || "";
+        const rawAmt = parseFloat(byId("bkTxAmount")?.value || 0);
+
+        if(!bankId){ alert("Kies een bank"); return; }
+        if(!rawAmt){ alert("Vul een bedrag in"); return; }
+
+        const amount = (kind==="out") ? -Math.abs(rawAmt) : Math.abs(rawAmt);
+
+        const tx = load(K.bkTx, []);
+        tx.push({ id:String(Date.now()), date, bankId, type:kind, desc, cat, amount });
+        save(K.bkTx, tx);
+
+        byId("bkTxDesc").value="";
+        byId("bkTxCat").value="";
+        byId("bkTxAmount").value="0";
+
+        try{ renderBookkeeping(); }catch(e){}
+      });
+    }
+  };
+
+  // Bind after initial renders so the elements exist
+  bindBookButtons();
+
+
+
+    // ===============================
+    // Factuur: periode + meerdere klanten
+    // ===============================
+    function getInvClientIds(){
+      const ids = load(K.invClientIds, null); // null = all
+      if(Array.isArray(ids) && ids.length===1 && ids[0]==="__none__") return ["__none__"];
+      return ids;
+    }
+    function setInvClientIds(arr){
+      if(!arr || !arr.length){ localStorage.removeItem(K.invClientIds); return; }
+      save(K.invClientIds, arr);
+    }
+
+    function invoiceFilteredRows(){
+      const rows = load(K.rows, []);
+      const from = el("invFrom")?.value || load(K.invFrom, "") || "";
+      const to = el("invTo")?.value || load(K.invTo, "") || "";
+      const fromD = from ? toDate(from) : null;
+      const toD = to ? toDate(to) : null;
+      const ids = getInvClientIds(); // null means all
+      return rows.filter(r=>{
+        const rd = toDate(r.date);
+        if(fromD && rd < fromD) return false;
+        if(toD && rd > toD) return false;
+        if(ids && ids.length){
+          if(ids[0]==="__none__") return false;
+          if(!ids.includes(r.clientId)) return false;
+        }
+        return true;
+      }).sort((a,b)=> (a.date>b.date? -1:1));
+    }
+
+    function renderInvoiceClientPick(){
+      const box = el("invClientsPick");
+      if(!box) return;
+      const clients = load(K.clients, []);
+      const ids = getInvClientIds(); // null => all
+      box.innerHTML = "";
+      if(!clients.length){
+        box.innerHTML = `<div class="muted small">Nog geen klanten. Voeg klanten toe in “Tarieven”.</div>`;
+        return;
+      }
+      clients.forEach(c=>{
+        const checked = (!ids || !ids.length) ? true : (ids.includes(c.id));
+        const wrap = document.createElement("label");
+        wrap.className = "pick";
+        wrap.innerHTML = `<input type="checkbox" ${checked?"checked":""} data-inv-cid="${escAttr(c.id)}"><span>${esc(c.name||"Klant")}</span>`;
+        box.appendChild(wrap);
+      });
+
+      box.querySelectorAll('input[data-inv-cid]').forEach(inp=>{
+        inp.onchange = ()=>{
+          const clients = load(K.clients, []);
+          const allIds = clients.map(x=>x.id);
+          const chosen = Array.from(box.querySelectorAll('input[data-inv-cid]:checked')).map(x=>x.dataset.invCid);
+          if(chosen.length === 0){
+            setInvClientIds(["__none__"]);
+          }else if(chosen.length === allIds.length){
+            localStorage.removeItem(K.invClientIds);
+          }else{
+            setInvClientIds(chosen);
+          }
+          buildInvoicePreview();
+        };
+      });
+    }
+
+    function bindInvoiceFilterUI(){
+      if(!el("invFrom") || !el("invTo")) return;
+
+      // defaults: this month
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = now.getMonth()+1;
+      const first = `${y}-${pad2(m)}-01`;
+      const lastD = new Date(y, m, 0).getDate();
+      const last = `${y}-${pad2(m)}-${pad2(lastD)}`;
+
+      el("invFrom").value = load(K.invFrom, first) || first;
+      el("invTo").value = load(K.invTo, last) || last;
+
+      el("invFrom").onchange = ()=>{ save(K.invFrom, el("invFrom").value||""); buildInvoicePreview(); };
+      el("invTo").onchange = ()=>{ save(K.invTo, el("invTo").value||""); buildInvoicePreview(); };
+
+      el("btnInvAll")?.addEventListener("click", ()=>{
+        localStorage.removeItem(K.invClientIds);
+        renderInvoiceClientPick();
+        buildInvoicePreview();
+      });
+      el("btnInvNone")?.addEventListener("click", ()=>{
+        setInvClientIds(["__none__"]);
+        renderInvoiceClientPick();
+        buildInvoicePreview();
+      });
+      el("btnInvUseOverview")?.addEventListener("click", ()=>{
+        const f = load(K.filters, { from:"", to:"", clientId:"all", quick:"thisMonth" });
+        let from = f.from, to = f.to;
+        if(f.quick && f.quick!=="all"){
+          const q = applyQuickFilter(f.quick);
+          if(!from) from = q.from;
+          if(!to) to = q.to;
+        }
+        if(from){ el("invFrom").value=from; save(K.invFrom, from); }
+        if(to){ el("invTo").value=to; save(K.invTo, to); }
+
+        if(f.clientId && f.clientId!=="all"){
+          setInvClientIds([f.clientId]);
+        }else{
+          localStorage.removeItem(K.invClientIds);
+        }
+        renderInvoiceClientPick();
+        buildInvoicePreview();
+      });
+
+      renderInvoiceClientPick();
+    }
+
+    // ensure filter UI is ready when opening Factuur tab
+    window.__HLI = window.__HLI || {};
+    window.__HLI.bindInvoiceFilterUI = bindInvoiceFilterUI;
+
+  // Rebuild tx button (bookkeeping)
+  document.addEventListener("click", (e)=>{
+    const t = e.target;
+    if(t && t.id==="bkRebuildTx"){
+      try{
+        rebuildBankTxFromDocs();
+        renderBookkeeping();
+        alert("Mutaties opnieuw opgebouwd uit boekstukken.");
+      }catch(err){
+        console.warn(err);
+        alert("Kon mutaties niet herstellen. Check console.");
+      }
+    }
+  });
+
+  // Settings: toggle show/hide bankmutaties in bookkeeping list
+  try{
+    const p = load(K.bkPrefs, {});
+    const cb = document.getElementById("stToggleShowMutations");
+    if(cb){
+      cb.checked = !!p.showMutationsInList;
+      cb.addEventListener("change", ()=>{
+        const prefs = load(K.bkPrefs, {});
+        prefs.showMutationsInList = !!cb.checked;
+        save(K.bkPrefs, prefs);
+        try{ renderBookkeeping(); }catch(e){}
+      });
+    }
+  }catch(e){}
 });
+
+
+/* ===============================
+   SETTINGS: BANK BEHEER (V23)
+=============================== */
+function escAttr(s){
+  return String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function renderSettingsBanks(){
+  const core = window.__HLI;
+  if(!core || !core.load || !core.save || !core.getK) return;
+
+  const K = core.getK();
+  const banks = core.load(K.bkBanks, []);
+  const body = document.getElementById("stBanksBody");
+  if(!body) return;
+  body.innerHTML = "";
+
+  if(!banks.length){
+    const tr=document.createElement("tr");
+    tr.innerHTML = `<td class="muted" colspan="3">Nog geen banken. Voeg er hieronder één toe.</td>`;
+    body.appendChild(tr);
+    return;
+  }
+
+  banks.forEach(b=>{
+    const id = String(b.id);
+    const tr=document.createElement("tr");
+    tr.innerHTML = `
+      <td><input data-stbank-name="${id}" type="text" value="${escAttr(b.name||"")}" /></td>
+      <td class="right"><input data-stbank-start="${id}" class="right mono" type="number" step="0.01" value="${Number(b.start||0).toFixed(2)}" /></td>
+      <td class="right"><button type="button" class="danger" data-stbank-del="${id}">Verwijder</button></td>
+    `;
+    body.appendChild(tr);
+  });
+
+  const commit = (mutate)=>{
+    const banks2 = core.load(K.bkBanks, []);
+    mutate(banks2);
+    core.save(K.bkBanks, banks2);
+    if(typeof window.renderBookkeeping === "function") window.renderBookkeeping();
+  };
+
+  body.querySelectorAll('input[data-stbank-name]').forEach(inp=>{
+    inp.addEventListener("input", ()=>{
+      const id = String(inp.dataset.stbankName);
+      commit((banks2)=>{
+        const b = banks2.find(x=>String(x.id)===id);
+        if(b) b.name = inp.value;
+      });
+    });
+  });
+
+  body.querySelectorAll('input[data-stbank-start]').forEach(inp=>{
+    inp.addEventListener("input", ()=>{
+      const id = String(inp.dataset.stbankStart);
+      commit((banks2)=>{
+        const b = banks2.find(x=>String(x.id)===id);
+        if(b) b.start = Number(inp.value||0);
+      });
+    });
+  });
+
+  body.querySelectorAll('button[data-stbank-del]').forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const id = String(btn.dataset.stbankDel);
+      if(!confirm("Bank verwijderen?")) return;
+      commit((banks2)=>{
+        const idx = banks2.findIndex(x=>String(x.id)===id);
+        if(idx>=0) banks2.splice(idx,1);
+      });
+      renderSettingsBanks();
+    });
+  });
+}
+
+function bindSettingsBanks(){
+  const core = window.__HLI;
+  if(!core || !core.load || !core.save || !core.getK) return;
+  const K = core.getK();
+
+  const btn = document.getElementById("stAddBankBtn");
+  if(!btn || btn.dataset.bound==="1") return;
+  btn.dataset.bound="1";
+
+  btn.addEventListener("click", ()=>{
+    const name = (document.getElementById("stAddBankName")?.value || "").trim();
+    const start = Number(document.getElementById("stAddBankStart")?.value || 0);
+
+    if(!name){ alert("Vul een banknaam in"); return; }
+
+    const banks = core.load(K.bkBanks, []);
+    banks.push({
+      id: "b_"+Date.now()+"_"+Math.random().toString(16).slice(2),
+      name,
+      start
+    });
+    core.save(K.bkBanks, banks);
+
+    // reset inputs
+    const n=document.getElementById("stAddBankName"); if(n) n.value="";
+    const s=document.getElementById("stAddBankStart"); if(s) s.value="0";
+
+    renderSettingsBanks();
+    try{ window.__HLI.renderBookkeeping && window.__HLI.renderBookkeeping(); }catch(e){}
+  });
+}
+
+
 </script>
 </body>
 </html>
